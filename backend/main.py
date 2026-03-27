@@ -2,16 +2,24 @@ from fastapi import FastAPI, Response, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from auth import hash_password, verify_password, create_access_token, decode_access_token
+from auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    decode_access_token,
+)
 from database import engine, Base, SessionLocal
 from models import NailColor, User
 import models
+import os
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,9 +27,11 @@ app.add_middleware(
 
 Base.metadata.create_all(bind=engine)
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
+
 
 class ColorRequest(BaseModel):
     color: str
@@ -32,10 +42,12 @@ class AddColorRequest(BaseModel):
     name: str
     hex: str
 
+
 class AddUserRequest(BaseModel):
     username: str
     password: str
     role: str
+
 
 def hex_to_rgb(hex_color: str):
     hex_color = hex_color.lstrip("#")
@@ -48,6 +60,7 @@ def hex_to_rgb(hex_color: str):
 
 def color_distance(r1, g1, b1, r2, g2, b2):
     return ((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2) ** 0.5
+
 
 def require_admin(request: Request):
     token = request.cookies.get("access_token")
@@ -64,6 +77,7 @@ def require_admin(request: Request):
         raise HTTPException(status_code=403, detail="Admin access required")
 
     return payload
+
 
 @app.get("/")
 def root():
@@ -88,17 +102,18 @@ def match_color(payload: ColorRequest):
     results = []
     for color in colors:
         distance = color_distance(
-            target_r, target_g, target_b,
-            color.r, color.g, color.b
+            target_r, target_g, target_b, color.r, color.g, color.b
         )
 
-        results.append({
-            "id": color.id,
-            "brand": color.brand,
-            "name": color.name,
-            "hex": color.hex,
-            "distance": distance
-        })
+        results.append(
+            {
+                "id": color.id,
+                "brand": color.brand,
+                "name": color.name,
+                "hex": color.hex,
+                "distance": distance,
+            }
+        )
 
     db.close()
     results.sort(key=lambda x: x["distance"])
@@ -140,8 +155,9 @@ def add_color(payload: AddColorRequest, request: Request):
             "r": new_color.r,
             "g": new_color.g,
             "b": new_color.b,
-        }
+        },
     }
+
 
 @app.delete("/colors/{color_id}")
 def delete_color(color_id: int, request: Request):
@@ -160,6 +176,7 @@ def delete_color(color_id: int, request: Request):
     db.close()
 
     return {"message": "Color deleted successfully"}
+
 
 @app.post("/admin/add-user")
 def add_user(payload: AddUserRequest, request: Request):
@@ -191,8 +208,9 @@ def add_user(payload: AddUserRequest, request: Request):
             "username": new_user.username,
             "role": new_user.role,
             "is_active": new_user.is_active,
-        }
+        },
     }
+
 
 @app.post("/login")
 def login(payload: LoginRequest, response: Response):
@@ -224,7 +242,7 @@ def login(payload: LoginRequest, response: Response):
         value=access_token,
         httponly=True,
         samesite="lax",
-        secure=False
+        secure=False,
     )
 
     return {
@@ -233,8 +251,9 @@ def login(payload: LoginRequest, response: Response):
             "id": user.id,
             "username": user.username,
             "role": user.role,
-        }
+        },
     }
+
 
 @app.get("/me")
 def get_current_user(request: Request):
@@ -255,6 +274,7 @@ def get_current_user(request: Request):
             "role": payload.get("role"),
         }
     }
+
 
 @app.post("/logout")
 def logout(response: Response):
@@ -280,7 +300,9 @@ def delete_user(user_id: int, request: Request):
     current_user_id = payload.get("user_id")
 
     if current_user_id == user_id:
-        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+        raise HTTPException(
+            status_code=400, detail="You cannot delete your own account"
+        )
 
     db: Session = SessionLocal()
 

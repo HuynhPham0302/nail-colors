@@ -1,9 +1,9 @@
+import os
 from datetime import datetime, timedelta
-from jose import jwt
-from passlib.context import CryptContext
 from jose import jwt, JWTError
+from passlib.context import CryptContext
 
-SECRET_KEY = "change_this_to_a_long_random_secret_key"
+SECRET_KEY = os.getenv("SECRET_KEY", "nail-color-secret-key-03021996-07111996")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -28,6 +28,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
 
 def decode_access_token(token: str):
     try:
