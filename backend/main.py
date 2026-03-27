@@ -288,7 +288,16 @@ def get_current_user(request: Request):
 
 @app.post("/logout")
 def logout(response: Response):
-    response.delete_cookie("access_token")
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=0,
+        expires=0,
+    )
     return {"message": "Logged out successfully"}
 
 
