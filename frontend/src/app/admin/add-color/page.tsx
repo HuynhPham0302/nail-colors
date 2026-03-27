@@ -73,7 +73,7 @@ export default function AddColorPage() {
             return;
         }
 
-        const res = await fetch("http://localhost:8000/admin/add-color", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/add-color`, {
             method: "POST",
             credentials: "include",
             headers: {

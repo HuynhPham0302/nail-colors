@@ -18,7 +18,7 @@ export default function ShowColorsPage() {
 
     const fetchColors = async () => {
         try {
-            const res = await fetch("http://localhost:8000/colors");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/colors`);
             const data = await res.json();
             setColors(data);
         } catch (error) {
@@ -37,7 +37,7 @@ export default function ShowColorsPage() {
         if (!confirmed) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/colors/${id}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/colors/${id}`, {
                 method: "DELETE",
                 credentials: "include",
             });

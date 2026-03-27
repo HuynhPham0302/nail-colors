@@ -30,7 +30,7 @@ export default function AdminUsersPage() {
 
     const fetchUsers = async () => {
         try {
-            const res = await fetch("http://localhost:8000/admin/users", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users`, {
                 credentials: "include",
             });
 
@@ -50,7 +50,7 @@ export default function AdminUsersPage() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch("http://localhost:8000/me", {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
                     credentials: "include",
                 });
 
@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
         setMessage("");
 
         try {
-            const res = await fetch("http://localhost:8000/admin/add-user", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/add-user`, {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -120,7 +120,7 @@ export default function AdminUsersPage() {
         if (!confirmed) return;
 
         try {
-            const res = await fetch(`http://localhost:8000/admin/users/${userId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${userId}`, {
                 method: "DELETE",
                 credentials: "include",
             });
@@ -141,7 +141,7 @@ export default function AdminUsersPage() {
 
     const handleLogout = async () => {
         try {
-            await fetch("http://localhost:8000/logout", {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
                 method: "POST",
                 credentials: "include",
             });
@@ -340,11 +340,10 @@ export default function AdminUsersPage() {
 
                                                         <td className="px-5 py-4 text-sm text-gray-700">
                                                             <span
-                                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                                                    user.is_active
-                                                                        ? "bg-green-100 text-green-700"
-                                                                        : "bg-gray-100 text-gray-600"
-                                                                }`}
+                                                                className={`rounded-full px-3 py-1 text-xs font-semibold ${user.is_active
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : "bg-gray-100 text-gray-600"
+                                                                    }`}
                                                             >
                                                                 {user.is_active ? "Yes" : "No"}
                                                             </span>
