@@ -22,6 +22,7 @@ origins = [
     "https://nail-colors.vercel.app",
     "https://nail-colors-git-main-huynh-phams-projects.vercel.app",
     "https://nailcolors.art",
+    "https://www.nailcolors.art",
 ]
 
 if FRONTEND_URL not in origins:
@@ -253,6 +254,7 @@ def login(payload: LoginRequest, response: Response):
         httponly=True,
         samesite="none",
         secure=True,
+        path="/",
     )
 
     return {
