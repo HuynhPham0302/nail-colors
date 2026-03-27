@@ -241,7 +241,7 @@ def login(payload: LoginRequest, response: Response):
         key="access_token",
         value=access_token,
         httponly=True,
-        samesite="lax",
+        samesite="none",
         secure=False,
     )
 
