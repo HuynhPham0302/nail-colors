@@ -34,7 +34,7 @@ export default function StaffPage() {
     useEffect(() => {
         const checkAuth = async () => {
             try {
-                const res = await fetch("http://localhost:8000/me", {
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
                     credentials: "include",
                 });
 
@@ -64,7 +64,7 @@ export default function StaffPage() {
 
     const handleLogout = async () => {
         try {
-            await fetch("http://localhost:8000/logout", {
+            await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
                 method: "POST",
                 credentials: "include",
             });
@@ -96,7 +96,7 @@ export default function StaffPage() {
         try {
             setApiMessage("");
 
-            const res = await fetch("http://localhost:8000/match-color", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/match-color`, {
                 method: "POST",
                 credentials: "include",
                 headers: {

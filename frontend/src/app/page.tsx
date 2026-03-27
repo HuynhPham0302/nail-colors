@@ -13,30 +13,30 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-  const checkLogin = async () => {
-    try {
-      const res = await fetch("http://localhost:8000/me", {
-        credentials: "include",
-      });
+    const checkLogin = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/me`, {
+          credentials: "include",
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (!data.user) return;
+        if (!data.user) return;
 
-      const role = data.user.role;
+        const role = data.user.role;
 
-      if (role === "admin") {
-        router.push("/admin");
-      } else if (role === "staff") {
-        router.push("/staff");
+        if (role === "admin") {
+          router.push("/admin");
+        } else if (role === "staff") {
+          router.push("/staff");
+        }
+      } catch (error) {
+        console.error("Check login failed:", error);
       }
-    } catch (error) {
-      console.error("Check login failed:", error);
-    }
-  };
+    };
 
-  checkLogin();
-}, [router]);
+    checkLogin();
+  }, [router]);
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,7 +44,7 @@ export default function Home() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8000/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
         method: "POST",
         credentials: "include",
         headers: {
