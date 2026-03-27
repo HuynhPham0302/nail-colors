@@ -242,7 +242,7 @@ def login(payload: LoginRequest, response: Response):
         value=access_token,
         httponly=True,
         samesite="none",
-        secure=False,
+        secure=True,
     )
 
     return {
