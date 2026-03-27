@@ -13,13 +13,23 @@ from models import NailColor, User
 import models
 import os
 
+app = FastAPI()
+
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
-app = FastAPI()
+origins = [
+    "http://localhost:3000",
+    "https://nail-colors.vercel.app",
+    "https://nail-colors-git-main-huynh-phams-projects.vercel.app",
+    "https://nailcolors.art",
+]
+
+if FRONTEND_URL not in origins:
+    origins.append(FRONTEND_URL)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
