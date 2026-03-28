@@ -13,14 +13,35 @@ type Technician = {
     turnPoints: number; // regular = +2, appointment = +1
 };
 
-const initialTechnicians: Technician[] = [
-    { id: 1, username: "staff1", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
-    { id: 2, username: "staff2", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
-    { id: 3, username: "staff3", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
-    { id: 4, username: "staff4", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
-    { id: 5, username: "staff5", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
-    { id: 6, username: "staff6", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
+const staffNames = [
+    "Theresa",
+    "Shayla",
+    "Natalie",
+    "Peter",
+    "Alyssa",
+    "Windy",
+    "Kelly Le",
+    "Julie",
+    "Nils",
+    "Kelly Pham",
+    "Helen",
+    "Nick",
+    "Thi",
+    "Emi",
+    "Katie",
+    "Tiffany",
 ];
+
+const initialTechnicians: Technician[] = staffNames.map((name, index) => ({
+    id: index + 1,
+    username: name,
+    checkedIn: false,
+    checkInOrder: null,
+    inProgress: false,
+    startedAt: null,
+    appointmentMode: false,
+    turnPoints: 0,
+}));
 
 function formatTurn(points: number) {
     const value = points / 2;
@@ -296,8 +317,8 @@ export default function TurnManagementPage() {
                                     onClick={() => setFixMode((prev) => !prev)}
                                     disabled={sessionEnded}
                                     className={`rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${fixMode
-                                            ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
-                                            : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                        ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                                        : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
                                         }`}
                                 >
                                     Fix Mode: {fixMode ? "On" : "Off"}
@@ -326,8 +347,8 @@ export default function TurnManagementPage() {
 
                             <div
                                 className={`rounded-full px-4 py-2 text-sm font-semibold ${sessionEnded
-                                        ? "bg-amber-200 text-amber-900"
-                                        : "bg-green-200 text-green-900"
+                                    ? "bg-amber-200 text-amber-900"
+                                    : "bg-green-200 text-green-900"
                                     }`}
                             >
                                 {sessionEnded ? "Session Ended" : "Session Active"}
@@ -477,8 +498,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
@@ -597,8 +618,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
