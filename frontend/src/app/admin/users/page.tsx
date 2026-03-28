@@ -169,7 +169,7 @@ export default function AdminUsersPage() {
     if (!currentUser) return null;
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-6 md:py-12">
+        <main className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-6 md:py-12">
             <div className="mx-auto max-w-6xl">
                 <div className="overflow-hidden rounded-[28px] border border-white/60 bg-white/90 shadow-2xl backdrop-blur md:rounded-[30px]">
                     <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-pink-600 px-5 py-7 text-white sm:px-6 md:px-8 md:py-10">
@@ -269,7 +269,7 @@ export default function AdminUsersPage() {
                             </form>
                         </section>
 
-                        <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 md:p-6">
+                        <section className="min-w-0 rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 md:p-6">
                             <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <h2 className="text-xl font-semibold text-gray-800">
@@ -295,8 +295,14 @@ export default function AdminUsersPage() {
                                         Swipe left and right to view more columns
                                     </div>
 
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-[720px] w-full">
+                                    <div
+                                        className="w-full overflow-x-auto overflow-y-hidden touch-pan-x"
+                                        style={{
+                                            WebkitOverflowScrolling: "touch",
+                                            touchAction: "pan-x",
+                                        }}
+                                    >
+                                        <table className="min-w-[720px] border-collapse">
                                             <thead className="border-b border-gray-200 bg-gray-50">
                                                 <tr>
                                                     <th className="min-w-[80px] px-4 py-4 text-left text-sm font-semibold text-gray-700 md:px-5">
