@@ -14,66 +14,12 @@ type Technician = {
 };
 
 const initialTechnicians: Technician[] = [
-    {
-        id: 1,
-        username: "staff1",
-        checkedIn: false,
-        checkInOrder: null,
-        inProgress: false,
-        startedAt: null,
-        appointmentMode: false,
-        turnPoints: 0,
-    },
-    {
-        id: 2,
-        username: "staff2",
-        checkedIn: false,
-        checkInOrder: null,
-        inProgress: false,
-        startedAt: null,
-        appointmentMode: false,
-        turnPoints: 0,
-    },
-    {
-        id: 3,
-        username: "staff3",
-        checkedIn: false,
-        checkInOrder: null,
-        inProgress: false,
-        startedAt: null,
-        appointmentMode: false,
-        turnPoints: 0,
-    },
-    {
-        id: 4,
-        username: "staff4",
-        checkedIn: false,
-        checkInOrder: null,
-        inProgress: false,
-        startedAt: null,
-        appointmentMode: false,
-        turnPoints: 0,
-    },
-    {
-        id: 5,
-        username: "staff5",
-        checkedIn: false,
-        checkInOrder: null,
-        inProgress: false,
-        startedAt: null,
-        appointmentMode: false,
-        turnPoints: 0,
-    },
-    {
-        id: 6,
-        username: "staff6",
-        checkedIn: false,
-        checkInOrder: null,
-        inProgress: false,
-        startedAt: null,
-        appointmentMode: false,
-        turnPoints: 0,
-    },
+    { id: 1, username: "staff1", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
+    { id: 2, username: "staff2", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
+    { id: 3, username: "staff3", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
+    { id: 4, username: "staff4", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
+    { id: 5, username: "staff5", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
+    { id: 6, username: "staff6", checkedIn: false, checkInOrder: null, inProgress: false, startedAt: null, appointmentMode: false, turnPoints: 0 },
 ];
 
 function formatTurn(points: number) {
@@ -255,6 +201,43 @@ export default function TurnManagementPage() {
                 }
                 return tech;
             })
+        );
+    };
+
+    const handleRemoveCheckIn = (id: number) => {
+        if (!fixMode || sessionEnded) return;
+
+        setTechnicians((prev) =>
+            prev.map((tech) =>
+                tech.id === id
+                    ? {
+                        ...tech,
+                        checkedIn: false,
+                        checkInOrder: null,
+                        inProgress: false,
+                        startedAt: null,
+                        appointmentMode: false,
+                    }
+                    : tech
+            )
+        );
+    };
+
+    const handleCancelInProgress = (id: number) => {
+        if (!fixMode || sessionEnded) return;
+
+        setTechnicians((prev) =>
+            prev.map((tech) =>
+                tech.id === id
+                    ? {
+                        ...tech,
+                        checkedIn: true,
+                        inProgress: false,
+                        startedAt: null,
+                        appointmentMode: false,
+                    }
+                    : tech
+            )
         );
     };
 
@@ -543,6 +526,14 @@ export default function TurnManagementPage() {
                                                         >
                                                             +1
                                                         </button>
+
+                                                        <button
+                                                            onClick={() => handleRemoveCheckIn(tech.id)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            Remove Check In
+                                                        </button>
                                                     </div>
                                                 )}
                                             </div>
@@ -646,6 +637,14 @@ export default function TurnManagementPage() {
                                                             className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
                                                         >
                                                             +1
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleCancelInProgress(tech.id)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            Cancel Service
                                                         </button>
                                                     </div>
                                                 )}
