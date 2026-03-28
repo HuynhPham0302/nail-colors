@@ -171,11 +171,11 @@ export default function AdminUsersPage() {
     return (
         <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-6 md:py-12">
             <div className="mx-auto max-w-6xl">
-                <div className="overflow-hidden rounded-[28px] md:rounded-[30px] border border-white/60 bg-white/90 shadow-2xl backdrop-blur">
+                <div className="overflow-hidden rounded-[28px] border border-white/60 bg-white/90 shadow-2xl backdrop-blur md:rounded-[30px]">
                     <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-pink-600 px-5 py-7 text-white sm:px-6 md:px-8 md:py-10">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
-                                <p className="mb-2 text-xs sm:text-sm font-medium uppercase tracking-[0.2em] text-pink-100">
+                                <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-pink-100 sm:text-sm">
                                     Nail Color App
                                 </p>
                                 <h1 className="text-2xl font-bold sm:text-3xl md:text-4xl">
@@ -188,7 +188,7 @@ export default function AdminUsersPage() {
 
                             <button
                                 onClick={handleLogout}
-                                className="inline-flex w-full sm:w-fit items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-md transition hover:scale-[1.02] hover:bg-slate-100 active:scale-[0.99]"
+                                className="inline-flex w-full items-center justify-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-md transition hover:scale-[1.02] hover:bg-slate-100 active:scale-[0.99] sm:w-fit"
                             >
                                 Logout
                             </button>
@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
                                 </button>
 
                                 {message && (
-                                    <p className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700 break-words">
+                                    <p className="break-words rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm font-medium text-gray-700">
                                         {message}
                                     </p>
                                 )}
@@ -290,112 +290,56 @@ export default function AdminUsersPage() {
                                     No users found.
                                 </div>
                             ) : (
-                                <>
-                                    <div className="hidden md:block overflow-hidden rounded-3xl border border-gray-200 bg-white">
-                                        <div className="overflow-x-auto">
-                                            <table className="min-w-full">
-                                                <thead className="border-b border-gray-200 bg-gray-50">
-                                                    <tr>
-                                                        <th className="px-5 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            ID
-                                                        </th>
-                                                        <th className="px-5 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Username
-                                                        </th>
-                                                        <th className="px-5 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Role
-                                                        </th>
-                                                        <th className="px-5 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Active
-                                                        </th>
-                                                        <th className="px-5 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Action
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-
-                                                <tbody>
-                                                    {users.map((user) => (
-                                                        <tr
-                                                            key={user.id}
-                                                            className="border-b border-gray-100 transition hover:bg-pink-50/40 last:border-b-0"
-                                                        >
-                                                            <td className="px-5 py-4 text-sm font-medium text-gray-700">
-                                                                {user.id}
-                                                            </td>
-
-                                                            <td className="px-5 py-4 text-sm text-gray-800">
-                                                                {user.username}
-                                                            </td>
-
-                                                            <td className="px-5 py-4 text-sm text-gray-800">
-                                                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
-                                                                    {user.role}
-                                                                </span>
-                                                            </td>
-
-                                                            <td className="px-5 py-4 text-sm text-gray-700">
-                                                                <span
-                                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${user.is_active
-                                                                        ? "bg-green-100 text-green-700"
-                                                                        : "bg-gray-100 text-gray-600"
-                                                                        }`}
-                                                                >
-                                                                    {user.is_active ? "Yes" : "No"}
-                                                                </span>
-                                                            </td>
-
-                                                            <td className="px-5 py-4">
-                                                                <button
-                                                                    onClick={() => handleDeleteUser(user.id)}
-                                                                    className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 hover:shadow-sm"
-                                                                >
-                                                                    Delete
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white">
+                                    <div className="border-b border-gray-100 bg-pink-50/40 px-4 py-3 text-xs font-medium text-gray-500 md:hidden">
+                                        Swipe left and right to view more columns
                                     </div>
 
-                                    <div className="space-y-3 md:hidden">
-                                        {users.map((user) => (
-                                            <div
-                                                key={user.id}
-                                                className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0">
-                                                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                                            Username
-                                                        </p>
-                                                        <p className="mt-1 break-words text-base font-semibold text-gray-800">
-                                                            {user.username}
-                                                        </p>
-                                                    </div>
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-[720px] w-full">
+                                            <thead className="border-b border-gray-200 bg-gray-50">
+                                                <tr>
+                                                    <th className="min-w-[80px] px-4 py-4 text-left text-sm font-semibold text-gray-700 md:px-5">
+                                                        ID
+                                                    </th>
+                                                    <th className="min-w-[180px] px-4 py-4 text-left text-sm font-semibold text-gray-700 md:px-5">
+                                                        Username
+                                                    </th>
+                                                    <th className="min-w-[120px] px-4 py-4 text-left text-sm font-semibold text-gray-700 md:px-5">
+                                                        Role
+                                                    </th>
+                                                    <th className="min-w-[120px] px-4 py-4 text-left text-sm font-semibold text-gray-700 md:px-5">
+                                                        Active
+                                                    </th>
+                                                    <th className="min-w-[140px] px-4 py-4 text-left text-sm font-semibold text-gray-700 md:px-5">
+                                                        Action
+                                                    </th>
+                                                </tr>
+                                            </thead>
 
-                                                    <span className="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
-                                                        {user.role}
-                                                    </span>
-                                                </div>
-
-                                                <div className="mt-4 grid grid-cols-2 gap-3">
-                                                    <div className="rounded-2xl bg-gray-50 px-3 py-3">
-                                                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                                            ID
-                                                        </p>
-                                                        <p className="mt-1 text-sm font-medium text-gray-800">
+                                            <tbody>
+                                                {users.map((user) => (
+                                                    <tr
+                                                        key={user.id}
+                                                        className="border-b border-gray-100 transition hover:bg-pink-50/40 last:border-b-0"
+                                                    >
+                                                        <td className="px-4 py-4 text-sm font-medium text-gray-700 md:px-5">
                                                             {user.id}
-                                                        </p>
-                                                    </div>
+                                                        </td>
 
-                                                    <div className="rounded-2xl bg-gray-50 px-3 py-3">
-                                                        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                                            Active
-                                                        </p>
-                                                        <div className="mt-1">
+                                                        <td className="px-4 py-4 text-sm text-gray-800 md:px-5">
+                                                            <div className="max-w-[220px] break-words">
+                                                                {user.username}
+                                                            </div>
+                                                        </td>
+
+                                                        <td className="px-4 py-4 text-sm text-gray-800 md:px-5">
+                                                            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
+                                                                {user.role}
+                                                            </span>
+                                                        </td>
+
+                                                        <td className="px-4 py-4 text-sm text-gray-700 md:px-5">
                                                             <span
                                                                 className={`rounded-full px-3 py-1 text-xs font-semibold ${user.is_active
                                                                     ? "bg-green-100 text-green-700"
@@ -404,20 +348,22 @@ export default function AdminUsersPage() {
                                                             >
                                                                 {user.is_active ? "Yes" : "No"}
                                                             </span>
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                                        </td>
 
-                                                <button
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                    className="mt-4 w-full rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 hover:shadow-sm"
-                                                >
-                                                    Delete User
-                                                </button>
-                                            </div>
-                                        ))}
+                                                        <td className="px-4 py-4 md:px-5">
+                                                            <button
+                                                                onClick={() => handleDeleteUser(user.id)}
+                                                                className="whitespace-nowrap rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 hover:shadow-sm"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                </>
+                                </div>
                             )}
                         </section>
                     </div>
