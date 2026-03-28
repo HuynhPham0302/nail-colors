@@ -94,6 +94,7 @@ function formatElapsed(startedAt: number | null, now: number) {
 export default function TurnManagementPage() {
     const [technicians, setTechnicians] = useState<Technician[]>(initialTechnicians);
     const [sessionEnded, setSessionEnded] = useState(false);
+    const [fixMode, setFixMode] = useState(false);
     const [now, setNow] = useState(Date.now());
 
     useEffect(() => {
@@ -208,6 +209,55 @@ export default function TurnManagementPage() {
         );
     };
 
+    const handleAdjustTurnPoints = (id: number, delta: number) => {
+        if (!fixMode || sessionEnded) return;
+
+        setTechnicians((prev) =>
+            prev.map((tech) => {
+                if (tech.id !== id) return tech;
+
+                const nextPoints = Math.max(0, tech.turnPoints + delta);
+
+                return {
+                    ...tech,
+                    turnPoints: nextPoints,
+                };
+            })
+        );
+    };
+
+    const handleMoveCheckInOrder = (id: number, direction: "up" | "down") => {
+        if (!fixMode || sessionEnded) return;
+
+        const checkedInOnly = [...technicians]
+            .filter((tech) => tech.checkedIn && !tech.inProgress)
+            .sort((a, b) => (a.checkInOrder ?? 9999) - (b.checkInOrder ?? 9999));
+
+        const index = checkedInOnly.findIndex((tech) => tech.id === id);
+        if (index === -1) return;
+
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        if (targetIndex < 0 || targetIndex >= checkedInOnly.length) return;
+
+        const currentTech = checkedInOnly[index];
+        const targetTech = checkedInOnly[targetIndex];
+
+        const currentOrder = currentTech.checkInOrder;
+        const targetOrder = targetTech.checkInOrder;
+
+        setTechnicians((prev) =>
+            prev.map((tech) => {
+                if (tech.id === currentTech.id) {
+                    return { ...tech, checkInOrder: targetOrder };
+                }
+                if (tech.id === targetTech.id) {
+                    return { ...tech, checkInOrder: currentOrder };
+                }
+                return tech;
+            })
+        );
+    };
+
     const handleDoneForToday = () => {
         const confirmed = window.confirm(
             "Are you sure you want to finish today and save all turn data?"
@@ -237,6 +287,7 @@ export default function TurnManagementPage() {
         );
 
         setSessionEnded(false);
+        setFixMode(false);
     };
 
     return (
@@ -257,7 +308,18 @@ export default function TurnManagementPage() {
                                 </p>
                             </div>
 
-                            <div className="flex flex-col gap-3 sm:flex-row">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                                <button
+                                    onClick={() => setFixMode((prev) => !prev)}
+                                    disabled={sessionEnded}
+                                    className={`rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${fixMode
+                                            ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                                            : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                        }`}
+                                >
+                                    Fix Mode: {fixMode ? "On" : "Off"}
+                                </button>
+
                                 <button
                                     onClick={handleResetBoard}
                                     className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
@@ -281,12 +343,18 @@ export default function TurnManagementPage() {
 
                             <div
                                 className={`rounded-full px-4 py-2 text-sm font-semibold ${sessionEnded
-                                    ? "bg-amber-200 text-amber-900"
-                                    : "bg-green-200 text-green-900"
+                                        ? "bg-amber-200 text-amber-900"
+                                        : "bg-green-200 text-green-900"
                                     }`}
                             >
                                 {sessionEnded ? "Session Ended" : "Session Active"}
                             </div>
+
+                            {fixMode && !sessionEnded && (
+                                <div className="rounded-full bg-amber-200 px-4 py-2 text-sm font-semibold text-amber-900">
+                                    Fix Mode Active
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -333,6 +401,34 @@ export default function TurnManagementPage() {
                                                     Check In
                                                 </button>
                                             </div>
+
+                                            {fixMode && (
+                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                    <button
+                                                        onClick={() => handleAdjustTurnPoints(tech.id, -1)}
+                                                        disabled={sessionEnded}
+                                                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        -0.5
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => handleAdjustTurnPoints(tech.id, 1)}
+                                                        disabled={sessionEnded}
+                                                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        +0.5
+                                                    </button>
+
+                                                    <button
+                                                        onClick={() => handleAdjustTurnPoints(tech.id, 2)}
+                                                        disabled={sessionEnded}
+                                                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        +1
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     ))
                                 )}
@@ -373,7 +469,8 @@ export default function TurnManagementPage() {
                                                             Turn: {formatTurn(tech.turnPoints)}
                                                         </p>
                                                         <p className="mt-1 text-xs text-gray-400">
-                                                            Priority: {Math.floor(tech.turnPoints / 2)} | Check-in order: {tech.checkInOrder}
+                                                            Priority: {Math.floor(tech.turnPoints / 2)} | Check-in order:{" "}
+                                                            {tech.checkInOrder}
                                                         </p>
                                                     </div>
 
@@ -397,13 +494,57 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
                                                     </button>
                                                 </div>
+
+                                                {fixMode && (
+                                                    <div className="flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-3">
+                                                        <button
+                                                            onClick={() => handleMoveCheckInOrder(tech.id, "up")}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            Move Up
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleMoveCheckInOrder(tech.id, "down")}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            Move Down
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, -1)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            -0.5
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, 1)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            +0.5
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, 2)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            +1
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -448,7 +589,8 @@ export default function TurnManagementPage() {
                                                             Current Turn: {formatTurn(tech.turnPoints)}
                                                         </p>
                                                         <p className="mt-1 text-xs text-gray-400">
-                                                            After done: {formatTurn(tech.turnPoints + (tech.appointmentMode ? 1 : 2))}
+                                                            After done:{" "}
+                                                            {formatTurn(tech.turnPoints + (tech.appointmentMode ? 1 : 2))}
                                                         </p>
                                                     </div>
 
@@ -464,8 +606,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
@@ -479,6 +621,34 @@ export default function TurnManagementPage() {
                                                         Done
                                                     </button>
                                                 </div>
+
+                                                {fixMode && (
+                                                    <div className="flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-3">
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, -1)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            -0.5
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, 1)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            +0.5
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, 2)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            +1
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     ))
