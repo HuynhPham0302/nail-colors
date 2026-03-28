@@ -2,15 +2,97 @@
 
 import { ChangeEvent, MouseEvent, useRef, useState } from "react";
 
+type Point = {
+    x: number;
+    y: number;
+};
+
+const SAMPLE_SIZE = 7;
+
 export default function AddColorPage() {
     const [imageUrl, setImageUrl] = useState<string | null>(null);
-    const [selectedPoint, setSelectedPoint] = useState<{ x: number; y: number } | null>(null);
+    const [selectedPoint, setSelectedPoint] = useState<Point | null>(null);
     const [selectedColor, setSelectedColor] = useState<string | null>(null);
     const [brand, setBrand] = useState("");
     const [name, setName] = useState("");
     const [message, setMessage] = useState("");
 
     const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+    const rgbToHex = (r: number, g: number, b: number) => {
+        return (
+            "#" +
+            [r, g, b]
+                .map((value) => value.toString(16).padStart(2, "0"))
+                .join("")
+        );
+    };
+
+    const getMedian = (values: number[]) => {
+        const sorted = [...values].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+
+        if (sorted.length % 2 === 0) {
+            return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+        }
+
+        return sorted[mid];
+    };
+
+    const getSampledColor = (
+        ctx: CanvasRenderingContext2D,
+        centerX: number,
+        centerY: number,
+        imageWidth: number,
+        imageHeight: number,
+        size: number = SAMPLE_SIZE
+    ) => {
+        const half = Math.floor(size / 2);
+
+        const startX = Math.max(0, centerX - half);
+        const startY = Math.max(0, centerY - half);
+        const endX = Math.min(imageWidth - 1, centerX + half);
+        const endY = Math.min(imageHeight - 1, centerY + half);
+
+        const sampleWidth = endX - startX + 1;
+        const sampleHeight = endY - startY + 1;
+
+        const imageData = ctx.getImageData(startX, startY, sampleWidth, sampleHeight).data;
+
+        const reds: number[] = [];
+        const greens: number[] = [];
+        const blues: number[] = [];
+
+        for (let i = 0; i < imageData.length; i += 4) {
+            const r = imageData[i];
+            const g = imageData[i + 1];
+            const b = imageData[i + 2];
+            const a = imageData[i + 3];
+
+            if (a === 0) continue;
+
+            const isTooBright = r > 235 && g > 235 && b > 235;
+            if (isTooBright) continue;
+
+            reds.push(r);
+            greens.push(g);
+            blues.push(b);
+        }
+
+        if (reds.length === 0) {
+            for (let i = 0; i < imageData.length; i += 4) {
+                reds.push(imageData[i]);
+                greens.push(imageData[i + 1]);
+                blues.push(imageData[i + 2]);
+            }
+        }
+
+        return {
+            r: getMedian(reds),
+            g: getMedian(greens),
+            b: getMedian(blues),
+        };
+    };
 
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -31,9 +113,13 @@ export default function AddColorPage() {
         const displayY = e.clientY - rect.top;
 
         setSelectedPoint({ x: displayX, y: displayY });
+        setMessage("");
 
-        const naturalX = Math.floor((displayX / rect.width) * img.naturalWidth);
-        const naturalY = Math.floor((displayY / rect.height) * img.naturalHeight);
+        const scaleX = img.naturalWidth / rect.width;
+        const scaleY = img.naturalHeight / rect.height;
+
+        const naturalX = Math.floor(displayX * scaleX);
+        const naturalY = Math.floor(displayY * scaleY);
 
         const canvas = document.createElement("canvas");
         canvas.width = img.naturalWidth;
@@ -44,17 +130,21 @@ export default function AddColorPage() {
 
         ctx.drawImage(img, 0, 0);
 
-        const pixel = ctx.getImageData(naturalX, naturalY, 1, 1).data;
-        const [r, g, b] = pixel;
+        const { r, g, b } = getSampledColor(
+            ctx,
+            naturalX,
+            naturalY,
+            img.naturalWidth,
+            img.naturalHeight,
+            SAMPLE_SIZE
+        );
 
-        const hex =
-            "#" +
-            [r, g, b]
-                .map((value) => value.toString(16).padStart(2, "0"))
-                .join("");
-
+        const hex = rgbToHex(r, g, b);
         setSelectedColor(hex);
-        setMessage("");
+
+        console.log("Clicked point:", { naturalX, naturalY });
+        console.log("Sampled RGB:", { r, g, b });
+        console.log("Sampled HEX:", hex);
     };
 
     const handleAddColor = async () => {
@@ -90,7 +180,6 @@ export default function AddColorPage() {
         console.log(data);
 
         setMessage(data.message || "Color added");
-
         setBrand("");
         setName("");
         setSelectedPoint(null);
@@ -110,11 +199,10 @@ export default function AddColorPage() {
                         <p className="mb-2 text-sm font-medium uppercase tracking-[0.2em] text-pink-100">
                             Nail Color App
                         </p>
-                        <h1 className="text-3xl font-bold md:text-4xl">
-                            Add Color
-                        </h1>
+                        <h1 className="text-3xl font-bold md:text-4xl">Add Color</h1>
                         <p className="mt-3 max-w-2xl text-sm text-slate-200 md:text-base">
-                            Upload an image, tap a color, then enter the brand and color name to save it to your database.
+                            Upload an image, tap a color, then enter the brand and color name
+                            to save it to your database.
                         </p>
                     </div>
 
@@ -126,6 +214,8 @@ export default function AddColorPage() {
                                 </h2>
                                 <p className="mt-1 text-sm text-gray-500">
                                     Choose an image and click directly on the color you want to save.
+                                    The app will sample a small area around your click for better
+                                    accuracy.
                                 </p>
                             </div>
 
@@ -153,24 +243,28 @@ export default function AddColorPage() {
                             </div>
 
                             <div className="mb-5 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-inner">
-                                <div className="min-h-[280px] flex items-center justify-center">
+                                <div className="flex min-h-[280px] items-center justify-center">
                                     {imageUrl ? (
                                         <div className="relative w-full">
                                             <img
                                                 src={imageUrl}
                                                 alt="Preview"
                                                 onClick={handleImageClick}
-                                                className="max-h-[420px] w-full cursor-crosshair object-contain"
+                                                className="max-h-[420px] w-full cursor-crosshair object-contain select-none"
                                             />
 
                                             {selectedPoint && (
                                                 <div
-                                                    className="absolute h-5 w-5 rounded-full border-4 border-white bg-pink-500 shadow-lg ring-2 ring-pink-200"
+                                                    className="pointer-events-none absolute rounded-full border-2 border-white bg-pink-500/20 shadow-lg ring-2 ring-pink-300"
                                                     style={{
-                                                        left: selectedPoint.x - 10,
-                                                        top: selectedPoint.y - 10,
+                                                        width: 28,
+                                                        height: 28,
+                                                        left: selectedPoint.x - 14,
+                                                        top: selectedPoint.y - 14,
                                                     }}
-                                                />
+                                                >
+                                                    <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white bg-pink-600" />
+                                                </div>
                                             )}
                                         </div>
                                     ) : (
@@ -190,7 +284,11 @@ export default function AddColorPage() {
                                         <p className="mt-1 text-lg font-bold text-gray-800">
                                             {selectedColor}
                                         </p>
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            Sample area: {SAMPLE_SIZE} × {SAMPLE_SIZE}
+                                        </p>
                                     </div>
+
                                     <div
                                         className="h-14 w-14 rounded-xl border-2 border-white shadow"
                                         style={{ backgroundColor: selectedColor }}
