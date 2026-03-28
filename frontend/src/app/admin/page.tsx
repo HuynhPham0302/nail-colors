@@ -46,7 +46,6 @@ export default function AdminPage() {
     checkAuth();
   }, [router]);
 
-  // 🔥 LOGOUT FUNCTION
   const handleLogout = async () => {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/logout`, {
@@ -63,7 +62,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-10">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-5xl">
           <div className="rounded-[28px] border border-white/70 bg-white/85 p-8 shadow-xl backdrop-blur">
             <p className="text-center text-base font-medium text-gray-500">
               Loading...
@@ -78,7 +77,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-8 md:py-12">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-5xl">
         <div className="overflow-hidden rounded-[30px] border border-white/60 bg-white/90 shadow-2xl backdrop-blur">
           <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-pink-600 px-6 py-8 text-white md:px-8 md:py-10">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -90,8 +89,8 @@ export default function AdminPage() {
                   Admin Dashboard
                 </h1>
                 <p className="mt-3 max-w-2xl text-sm text-slate-200 md:text-base">
-                  Manage colors, review your database, and control user access
-                  from one place.
+                  Manage colors, review your database, control user access, and
+                  handle daily technician turns from one place.
                 </p>
               </div>
 
@@ -121,7 +120,7 @@ export default function AdminPage() {
               </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               <Link
                 href="/admin/add-color"
                 className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
@@ -170,6 +169,24 @@ export default function AdminPage() {
                 </h3>
                 <p className="mt-2 text-sm text-gray-500">
                   Create, review, and manage user accounts.
+                </p>
+                <p className="mt-5 text-sm font-semibold text-pink-600">
+                  Open page →
+                </p>
+              </Link>
+
+              <Link
+                href="/admin/turn-management"
+                className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700 transition group-hover:bg-pink-100 group-hover:text-pink-600">
+                  🔄
+                </div>
+                <h3 className="text-xl font-semibold text-gray-800 transition group-hover:text-pink-600">
+                  Turn Management
+                </h3>
+                <p className="mt-2 text-sm text-gray-500">
+                  Manage daily technician check-in, service progress, and turn tracking.
                 </p>
                 <p className="mt-5 text-sm font-semibold text-pink-600">
                   Open page →
