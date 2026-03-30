@@ -62,6 +62,7 @@ export default function TurnManagementPage() {
     const [technicians, setTechnicians] = useState<Technician[]>(initialTechnicians);
     const [sessionEnded, setSessionEnded] = useState(false);
     const [fixMode, setFixMode] = useState(false);
+    const [showAllStaff, setShowAllStaff] = useState(false);
     const [now, setNow] = useState(Date.now());
 
     useEffect(() => {
@@ -121,6 +122,8 @@ export default function TurnManagementPage() {
                     : tech
             )
         );
+
+        setShowAllStaff(false);
     };
 
     const handleStartService = (id: number) => {
@@ -269,6 +272,7 @@ export default function TurnManagementPage() {
         if (!confirmed) return;
 
         setSessionEnded(true);
+        setShowAllStaff(false);
 
         console.log("Final turn data for today:", technicians);
         alert("Today is finished. Later this button will save all data to the database.");
@@ -292,6 +296,7 @@ export default function TurnManagementPage() {
 
         setSessionEnded(false);
         setFixMode(false);
+        setShowAllStaff(false);
     };
 
     return (
@@ -304,15 +309,21 @@ export default function TurnManagementPage() {
                                 <p className="mb-2 text-sm font-medium uppercase tracking-[0.2em] text-pink-100">
                                     Nail Color App
                                 </p>
-                                <h1 className="text-3xl font-bold md:text-4xl">
-                                    Turn Management
-                                </h1>
+                                <h1 className="text-3xl font-bold md:text-4xl">Turn Management</h1>
                                 <p className="mt-3 max-w-3xl text-sm text-slate-200 md:text-base">
                                     Manage daily technician check-in, service progress, and turn counting.
                                 </p>
                             </div>
 
                             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                                <button
+                                    onClick={() => setShowAllStaff((prev) => !prev)}
+                                    disabled={sessionEnded}
+                                    className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {showAllStaff ? "Hide Staff" : "Add Staff"}
+                                </button>
+
                                 <button
                                     onClick={() => setFixMode((prev) => !prev)}
                                     disabled={sessionEnded}
@@ -359,85 +370,96 @@ export default function TurnManagementPage() {
                                     Fix Mode Active
                                 </div>
                             )}
+
+                            {!showAllStaff && !sessionEnded && (
+                                <div className="rounded-full bg-white/15 px-4 py-2 text-sm text-white">
+                                    Staff panel hidden
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div className="grid gap-6 p-4 md:grid-cols-3 md:p-8">
-                        <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 md:p-6">
-                            <div className="mb-5 flex items-center justify-between">
-                                <div>
-                                    <h2 className="text-xl font-semibold text-gray-800">All Staff</h2>
-                                    <p className="mt-1 text-sm text-gray-500">
-                                        Available staff accounts for today.
-                                    </p>
-                                </div>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                                    {availableStaff.length}
-                                </span>
-                            </div>
-
-                            <div className="space-y-3">
-                                {availableStaff.length === 0 ? (
-                                    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
-                                        No available staff left to check in.
+                    <div
+                        className={`grid gap-6 p-4 md:p-8 ${showAllStaff ? "md:grid-cols-3" : "md:grid-cols-2"
+                            }`}
+                    >
+                        {showAllStaff && (
+                            <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 md:p-6">
+                                <div className="mb-5 flex items-center justify-between">
+                                    <div>
+                                        <h2 className="text-xl font-semibold text-gray-800">All Staff</h2>
+                                        <p className="mt-1 text-sm text-gray-500">
+                                            Available staff accounts for today.
+                                        </p>
                                     </div>
-                                ) : (
-                                    availableStaff.map((tech) => (
-                                        <div
-                                            key={tech.id}
-                                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div>
-                                                    <p className="text-base font-semibold text-gray-800">
-                                                        {tech.username}
-                                                    </p>
-                                                    <p className="mt-1 text-sm text-gray-500">
-                                                        Turn: {formatTurn(tech.turnPoints)}
-                                                    </p>
-                                                </div>
+                                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                        {availableStaff.length}
+                                    </span>
+                                </div>
 
-                                                <button
-                                                    onClick={() => handleCheckIn(tech.id)}
-                                                    disabled={sessionEnded}
-                                                    className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    Check In
-                                                </button>
-                                            </div>
-
-                                            {fixMode && (
-                                                <div className="mt-3 flex flex-wrap gap-2">
-                                                    <button
-                                                        onClick={() => handleAdjustTurnPoints(tech.id, -1)}
-                                                        disabled={sessionEnded}
-                                                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        -0.5
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => handleAdjustTurnPoints(tech.id, 1)}
-                                                        disabled={sessionEnded}
-                                                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        +0.5
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => handleAdjustTurnPoints(tech.id, 2)}
-                                                        disabled={sessionEnded}
-                                                        className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                                                    >
-                                                        +1
-                                                    </button>
-                                                </div>
-                                            )}
+                                <div className="space-y-3">
+                                    {availableStaff.length === 0 ? (
+                                        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                                            No available staff left to check in.
                                         </div>
-                                    ))
-                                )}
-                            </div>
-                        </section>
+                                    ) : (
+                                        availableStaff.map((tech) => (
+                                            <div
+                                                key={tech.id}
+                                                className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <p className="text-base font-semibold text-gray-800">
+                                                            {tech.username}
+                                                        </p>
+                                                        <p className="mt-1 text-sm text-gray-500">
+                                                            Turn: {formatTurn(tech.turnPoints)}
+                                                        </p>
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => handleCheckIn(tech.id)}
+                                                        disabled={sessionEnded}
+                                                        className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        Check In
+                                                    </button>
+                                                </div>
+
+                                                {fixMode && (
+                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, -1)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            -0.5
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, 1)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            +0.5
+                                                        </button>
+
+                                                        <button
+                                                            onClick={() => handleAdjustTurnPoints(tech.id, 2)}
+                                                            disabled={sessionEnded}
+                                                            className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            +1
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </section>
+                        )}
 
                         <section className="rounded-3xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5 md:p-6">
                             <div className="mb-5 flex items-center justify-between">
