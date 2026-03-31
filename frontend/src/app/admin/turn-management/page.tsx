@@ -63,7 +63,6 @@ export default function TurnManagementPage() {
     const [sessionEnded, setSessionEnded] = useState(false);
     const [fixMode, setFixMode] = useState(false);
     const [showStaffListModal, setShowStaffListModal] = useState(false);
-    const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
     const [now, setNow] = useState(Date.now());
 
     useEffect(() => {
@@ -109,34 +108,20 @@ export default function TurnManagementPage() {
         .filter((tech) => tech.inProgress)
         .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
 
-    const toggleStaffSelection = (id: number) => {
-        setSelectedStaffIds((prev) =>
-            prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    const handleAddSingleToCheckedIn = (id: number) => {
+        if (sessionEnded) return;
+
+        setTechnicians((prev) =>
+            prev.map((tech) =>
+                tech.id === id
+                    ? {
+                        ...tech,
+                        checkedIn: true,
+                        checkInOrder: nextCheckInOrder,
+                    }
+                    : tech
+            )
         );
-    };
-
-    const handleAddSelectedToCheckedIn = () => {
-        if (sessionEnded || selectedStaffIds.length === 0) return;
-
-        setTechnicians((prev) => {
-            let order = nextCheckInOrder;
-
-            return prev.map((tech) => {
-                if (!selectedStaffIds.includes(tech.id)) return tech;
-
-                const updated = {
-                    ...tech,
-                    checkedIn: true,
-                    checkInOrder: order,
-                };
-
-                order += 1;
-                return updated;
-            });
-        });
-
-        setSelectedStaffIds([]);
-        setShowStaffListModal(false);
     };
 
     const handleStartService = (id: number) => {
@@ -310,7 +295,6 @@ export default function TurnManagementPage() {
         setSessionEnded(false);
         setFixMode(false);
         setShowStaffListModal(false);
-        setSelectedStaffIds([]);
     };
 
     return (
@@ -410,35 +394,35 @@ export default function TurnManagementPage() {
                                     checkedInStaff.map((tech) => (
                                         <div
                                             key={tech.id}
-                                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                                            className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm"
                                         >
-                                            <div className="flex flex-col gap-4">
+                                            <div className="flex flex-col gap-3">
                                                 <div className="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <p className="text-base font-semibold text-gray-800">
-                                                            {tech.username}
-                                                        </p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                            <p className="truncate text-xl font-semibold text-gray-800">
+                                                                {tech.username}
+                                                            </p>
+
+                                                            {tech.appointmentMode && (
+                                                                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                                                                    Appointment
+                                                                </span>
+                                                            )}
+                                                        </div>
+
                                                         <p className="mt-1 text-sm text-gray-500">
-                                                            Turn: {formatTurn(tech.turnPoints)}
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-gray-400">
-                                                            Priority: {Math.floor(tech.turnPoints / 2)} | Check-in order:{" "}
-                                                            {tech.checkInOrder}
+                                                            Turn: {formatTurn(tech.turnPoints)} · Priority:{" "}
+                                                            {Math.floor(tech.turnPoints / 2)} · Check-in: {tech.checkInOrder}
                                                         </p>
                                                     </div>
-
-                                                    {tech.appointmentMode && (
-                                                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                                                            Appointment
-                                                        </span>
-                                                    )}
                                                 </div>
 
                                                 <div className="flex flex-wrap gap-2">
                                                     <button
                                                         onClick={() => handleStartService(tech.id)}
                                                         disabled={sessionEnded}
-                                                        className="rounded-xl bg-pink-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        className="rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                     >
                                                         Start Service
                                                     </button>
@@ -446,7 +430,7 @@ export default function TurnManagementPage() {
                                                     <button
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
-                                                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
+                                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
                                                                 ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
                                                                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
@@ -535,38 +519,36 @@ export default function TurnManagementPage() {
                                     inProgressStaff.map((tech) => (
                                         <div
                                             key={tech.id}
-                                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                                            className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm"
                                         >
-                                            <div className="flex flex-col gap-4">
+                                            <div className="flex flex-col gap-3">
                                                 <div className="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <p className="text-base font-semibold text-gray-800">
-                                                            {tech.username}
-                                                        </p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                                            <p className="truncate text-xl font-semibold text-gray-800">
+                                                                {tech.username}
+                                                            </p>
+
+                                                            {tech.appointmentMode && (
+                                                                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                                                                    Appointment
+                                                                </span>
+                                                            )}
+                                                        </div>
+
                                                         <p className="mt-1 text-sm text-gray-500">
-                                                            Time: {formatElapsed(tech.startedAt, now)}
-                                                        </p>
-                                                        <p className="mt-1 text-sm text-gray-500">
-                                                            Current Turn: {formatTurn(tech.turnPoints)}
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-gray-400">
-                                                            After done:{" "}
+                                                            Time: {formatElapsed(tech.startedAt, now)} · Current Turn:{" "}
+                                                            {formatTurn(tech.turnPoints)} · After Done:{" "}
                                                             {formatTurn(tech.turnPoints + (tech.appointmentMode ? 1 : 2))}
                                                         </p>
                                                     </div>
-
-                                                    {tech.appointmentMode && (
-                                                        <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">
-                                                            Appointment
-                                                        </span>
-                                                    )}
                                                 </div>
 
                                                 <div className="flex flex-wrap gap-2">
                                                     <button
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
-                                                        className={`rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
+                                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
                                                                 ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
                                                                 : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
@@ -577,7 +559,7 @@ export default function TurnManagementPage() {
                                                     <button
                                                         onClick={() => handleDoneService(tech.id)}
                                                         disabled={sessionEnded}
-                                                        className="rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                                        className="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                     >
                                                         Done
                                                     </button>
@@ -636,15 +618,12 @@ export default function TurnManagementPage() {
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-800">Staff List</h2>
                                     <p className="mt-1 text-sm text-gray-500">
-                                        Select one or more staff members to add to Checked In.
+                                        Add technicians one by one in the exact order they arrive.
                                     </p>
                                 </div>
 
                                 <button
-                                    onClick={() => {
-                                        setShowStaffListModal(false);
-                                        setSelectedStaffIds([]);
-                                    }}
+                                    onClick={() => setShowStaffListModal(false)}
                                     className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
                                 >
                                     Close
@@ -652,27 +631,22 @@ export default function TurnManagementPage() {
                             </div>
                         </div>
 
-                        <div className="max-h-[55vh] overflow-y-auto px-5 py-5 sm:px-6">
+                        <div className="max-h-[60vh] overflow-y-auto px-5 py-5 sm:px-6">
                             {availableStaff.length === 0 ? (
                                 <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
                                     No available staff left to add.
                                 </div>
                             ) : (
                                 <div className="grid gap-3 sm:grid-cols-2">
-                                    {availableStaff.map((tech) => {
-                                        const selected = selectedStaffIds.includes(tech.id);
-
-                                        return (
-                                            <div
-                                                key={tech.id}
-                                                className={`rounded-2xl border p-4 shadow-sm transition ${selected
-                                                        ? "border-pink-300 bg-pink-50"
-                                                        : "border-gray-200 bg-white"
-                                                    }`}
-                                            >
+                                    {availableStaff.map((tech) => (
+                                        <div
+                                            key={tech.id}
+                                            className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
+                                        >
+                                            <div className="flex flex-col gap-3">
                                                 <div className="flex items-start justify-between gap-3">
-                                                    <div>
-                                                        <p className="text-base font-semibold text-gray-800">
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-lg font-semibold text-gray-800">
                                                             {tech.username}
                                                         </p>
                                                         <p className="mt-1 text-sm text-gray-500">
@@ -680,16 +654,16 @@ export default function TurnManagementPage() {
                                                         </p>
                                                     </div>
 
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selected}
-                                                        onChange={() => toggleStaffSelection(tech.id)}
-                                                        className="mt-1 h-5 w-5 rounded border-gray-300 accent-pink-600"
-                                                    />
+                                                    <button
+                                                        onClick={() => handleAddSingleToCheckedIn(tech.id)}
+                                                        className="shrink-0 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                                                    >
+                                                        Add
+                                                    </button>
                                                 </div>
 
                                                 {fixMode && (
-                                                    <div className="mt-3 flex flex-wrap gap-2">
+                                                    <div className="flex flex-wrap gap-2">
                                                         <button
                                                             onClick={() => handleAdjustTurnPoints(tech.id, -1)}
                                                             className="rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
@@ -713,35 +687,16 @@ export default function TurnManagementPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
 
                         <div className="border-t border-gray-200 px-5 py-4 sm:px-6">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <p className="text-sm text-gray-500">
-                                    {selectedStaffIds.length} selected
-                                </p>
-
-                                <div className="flex flex-col gap-3 sm:flex-row">
-                                    <button
-                                        onClick={() => setSelectedStaffIds([])}
-                                        className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
-                                    >
-                                        Clear Selection
-                                    </button>
-
-                                    <button
-                                        onClick={handleAddSelectedToCheckedIn}
-                                        disabled={selectedStaffIds.length === 0}
-                                        className="rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        Add Selected to Checked In
-                                    </button>
-                                </div>
-                            </div>
+                            <p className="text-sm text-gray-500">
+                                Add each technician in arrival order, then close this list when finished.
+                            </p>
                         </div>
                     </div>
                 </div>
