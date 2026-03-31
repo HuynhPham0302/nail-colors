@@ -10,6 +10,9 @@ type Technician = {
     inProgress: boolean;
     startedAt: number | null;
     appointmentMode: boolean;
+    bonusMode: boolean;
+    bonusInput: string;
+    bonusAmount: number;
     turnPoints: number; // regular = +2, appointment = +1
 };
 
@@ -40,6 +43,9 @@ const initialTechnicians: Technician[] = staffNames.map((name, index) => ({
     inProgress: false,
     startedAt: null,
     appointmentMode: false,
+    bonusMode: false,
+    bonusInput: "",
+    bonusAmount: 0,
     turnPoints: 0,
 }));
 
@@ -56,6 +62,12 @@ function formatElapsed(startedAt: number | null, now: number) {
     const seconds = diffSeconds % 60;
 
     return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function parseBonusInput(value: string) {
+    const num = Number(value);
+    if (Number.isNaN(num) || num < 0) return 0;
+    return num;
 }
 
 export default function TurnManagementPage() {
@@ -100,7 +112,6 @@ export default function TurnManagementPage() {
             const bPriority = Math.floor(b.turnPoints / 2);
 
             if (aPriority !== bPriority) return aPriority - bPriority;
-
             return (a.checkInOrder ?? 9999) - (b.checkInOrder ?? 9999);
         });
 
@@ -150,6 +161,44 @@ export default function TurnManagementPage() {
                     ? {
                         ...tech,
                         appointmentMode: !tech.appointmentMode,
+                        bonusMode: tech.appointmentMode ? tech.bonusMode : false,
+                        bonusInput: tech.appointmentMode ? tech.bonusInput : "",
+                    }
+                    : tech
+            )
+        );
+    };
+
+    const handleToggleBonus = (id: number) => {
+        if (sessionEnded) return;
+
+        setTechnicians((prev) =>
+            prev.map((tech) => {
+                if (tech.id !== id) return tech;
+
+                const nextBonusMode = !tech.bonusMode;
+
+                return {
+                    ...tech,
+                    bonusMode: nextBonusMode,
+                    appointmentMode: nextBonusMode ? false : tech.appointmentMode,
+                    bonusInput: nextBonusMode ? tech.bonusInput : "",
+                };
+            })
+        );
+    };
+
+    const handleBonusInputChange = (id: number, value: string) => {
+        if (sessionEnded) return;
+
+        if (!/^\d*\.?\d*$/.test(value)) return;
+
+        setTechnicians((prev) =>
+            prev.map((tech) =>
+                tech.id === id
+                    ? {
+                        ...tech,
+                        bonusInput: value,
                     }
                     : tech
             )
@@ -163,7 +212,23 @@ export default function TurnManagementPage() {
             prev.map((tech) => {
                 if (tech.id !== id) return tech;
 
-                const addedPoints = tech.appointmentMode ? 1 : 2;
+                let nextTurnPoints = tech.turnPoints;
+                let nextBonusAmount = tech.bonusAmount;
+
+                if (tech.bonusMode) {
+                    const serviceBonus = parseBonusInput(tech.bonusInput);
+                    const totalBonus = nextBonusAmount + serviceBonus;
+
+                    if (totalBonus >= 30) {
+                        nextTurnPoints += 2; // +1 turn
+                        nextBonusAmount = 0; // reset về 0, không giữ số dư
+                    } else {
+                        nextBonusAmount = totalBonus;
+                    }
+                } else {
+                    const addedPoints = tech.appointmentMode ? 1 : 2;
+                    nextTurnPoints += addedPoints;
+                }
 
                 return {
                     ...tech,
@@ -171,7 +236,10 @@ export default function TurnManagementPage() {
                     inProgress: false,
                     startedAt: null,
                     appointmentMode: false,
-                    turnPoints: tech.turnPoints + addedPoints,
+                    bonusMode: false,
+                    bonusInput: "",
+                    bonusAmount: nextBonusAmount,
+                    turnPoints: nextTurnPoints,
                 };
             })
         );
@@ -183,12 +251,9 @@ export default function TurnManagementPage() {
         setTechnicians((prev) =>
             prev.map((tech) => {
                 if (tech.id !== id) return tech;
-
-                const nextPoints = Math.max(0, tech.turnPoints + delta);
-
                 return {
                     ...tech,
-                    turnPoints: nextPoints,
+                    turnPoints: Math.max(0, tech.turnPoints + delta),
                 };
             })
         );
@@ -215,12 +280,8 @@ export default function TurnManagementPage() {
 
         setTechnicians((prev) =>
             prev.map((tech) => {
-                if (tech.id === currentTech.id) {
-                    return { ...tech, checkInOrder: targetOrder };
-                }
-                if (tech.id === targetTech.id) {
-                    return { ...tech, checkInOrder: currentOrder };
-                }
+                if (tech.id === currentTech.id) return { ...tech, checkInOrder: targetOrder };
+                if (tech.id === targetTech.id) return { ...tech, checkInOrder: currentOrder };
                 return tech;
             })
         );
@@ -239,6 +300,8 @@ export default function TurnManagementPage() {
                         inProgress: false,
                         startedAt: null,
                         appointmentMode: false,
+                        bonusMode: false,
+                        bonusInput: "",
                     }
                     : tech
             )
@@ -257,6 +320,8 @@ export default function TurnManagementPage() {
                         inProgress: false,
                         startedAt: null,
                         appointmentMode: false,
+                        bonusMode: false,
+                        bonusInput: "",
                     }
                     : tech
             )
@@ -288,6 +353,9 @@ export default function TurnManagementPage() {
                 inProgress: false,
                 startedAt: null,
                 appointmentMode: false,
+                bonusMode: false,
+                bonusInput: "",
+                bonusAmount: 0,
                 turnPoints: 0,
             }))
         );
@@ -309,7 +377,7 @@ export default function TurnManagementPage() {
                                 </p>
                                 <h1 className="text-3xl font-bold md:text-4xl">Turn Management</h1>
                                 <p className="mt-3 max-w-3xl text-sm text-slate-200 md:text-base">
-                                    Manage daily technician check-in, service progress, and turn counting.
+                                    Manage daily technician check-in, service progress, bonus tracking, and turn counting.
                                 </p>
                             </div>
 
@@ -397,10 +465,10 @@ export default function TurnManagementPage() {
                                             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm"
                                         >
                                             <div className="flex flex-col gap-3">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                                            <p className="truncate text-xl font-semibold text-gray-800">
+                                                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                                                            <p className="truncate text-2xl font-bold text-gray-800">
                                                                 {tech.username}
                                                             </p>
 
@@ -409,12 +477,42 @@ export default function TurnManagementPage() {
                                                                     Appointment
                                                                 </span>
                                                             )}
+
+                                                            {tech.bonusMode && (
+                                                                <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                                                                    Bonus
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <div className="rounded-2xl bg-slate-100 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                                                Turn
+                                                            </span>
+                                                            <p className="text-lg font-bold text-slate-800">
+                                                                {formatTurn(tech.turnPoints)}
+                                                            </p>
                                                         </div>
 
-                                                        <p className="mt-1 text-sm text-gray-500">
-                                                            Turn: {formatTurn(tech.turnPoints)} · Priority:{" "}
-                                                            {Math.floor(tech.turnPoints / 2)} · Check-in: {tech.checkInOrder}
-                                                        </p>
+                                                        <div className="rounded-2xl bg-pink-50 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-pink-500">
+                                                                Check-In
+                                                            </span>
+                                                            <p className="text-lg font-bold text-pink-700">
+                                                                {tech.checkInOrder ?? "-"}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="rounded-2xl bg-emerald-50 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-emerald-500">
+                                                                Bonus
+                                                            </span>
+                                                            <p className="text-lg font-bold text-emerald-700">
+                                                                ${tech.bonusAmount}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -437,7 +535,37 @@ export default function TurnManagementPage() {
                                                     >
                                                         Has Appointment
                                                     </button>
+
+                                                    <button
+                                                        onClick={() => handleToggleBonus(tech.id)}
+                                                        disabled={sessionEnded}
+                                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.bonusMode
+                                                                ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            }`}
+                                                    >
+                                                        Bonus
+                                                    </button>
                                                 </div>
+
+                                                {tech.bonusMode && (
+                                                    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-sky-50 px-4 py-3">
+                                                        <label className="text-sm font-medium text-sky-800">
+                                                            Bonus amount
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={tech.bonusInput}
+                                                            onChange={(e) => handleBonusInputChange(tech.id, e.target.value)}
+                                                            placeholder="Enter amount"
+                                                            className="w-40 rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                                        />
+                                                        <span className="text-sm text-sky-700">
+                                                            Added only after Done
+                                                        </span>
+                                                    </div>
+                                                )}
 
                                                 {fixMode && (
                                                     <div className="flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-3">
@@ -522,10 +650,10 @@ export default function TurnManagementPage() {
                                             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm"
                                         >
                                             <div className="flex flex-col gap-3">
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="min-w-0 flex-1">
-                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                                            <p className="truncate text-xl font-semibold text-gray-800">
+                                                <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                                                    <div className="min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                                                            <p className="truncate text-2xl font-bold text-gray-800">
                                                                 {tech.username}
                                                             </p>
 
@@ -534,13 +662,51 @@ export default function TurnManagementPage() {
                                                                     Appointment
                                                                 </span>
                                                             )}
+
+                                                            {tech.bonusMode && (
+                                                                <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                                                                    Bonus
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <div className="rounded-2xl bg-slate-100 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                                                                Turn
+                                                            </span>
+                                                            <p className="text-lg font-bold text-slate-800">
+                                                                {formatTurn(tech.turnPoints)}
+                                                            </p>
                                                         </div>
 
-                                                        <p className="mt-1 text-sm text-gray-500">
-                                                            Time: {formatElapsed(tech.startedAt, now)} · Current Turn:{" "}
-                                                            {formatTurn(tech.turnPoints)} · After Done:{" "}
-                                                            {formatTurn(tech.turnPoints + (tech.appointmentMode ? 1 : 2))}
-                                                        </p>
+                                                        <div className="rounded-2xl bg-pink-50 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-pink-500">
+                                                                Check-In
+                                                            </span>
+                                                            <p className="text-lg font-bold text-pink-700">
+                                                                {tech.checkInOrder ?? "-"}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="rounded-2xl bg-emerald-50 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-emerald-500">
+                                                                Bonus
+                                                            </span>
+                                                            <p className="text-lg font-bold text-emerald-700">
+                                                                ${tech.bonusAmount}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="rounded-2xl bg-violet-50 px-3 py-2">
+                                                            <span className="text-xs font-medium uppercase tracking-wide text-violet-500">
+                                                                Time
+                                                            </span>
+                                                            <p className="text-lg font-bold text-violet-700">
+                                                                {formatElapsed(tech.startedAt, now)}
+                                                            </p>
+                                                        </div>
                                                     </div>
                                                 </div>
 
@@ -557,6 +723,17 @@ export default function TurnManagementPage() {
                                                     </button>
 
                                                     <button
+                                                        onClick={() => handleToggleBonus(tech.id)}
+                                                        disabled={sessionEnded}
+                                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.bonusMode
+                                                                ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            }`}
+                                                    >
+                                                        Bonus
+                                                    </button>
+
+                                                    <button
                                                         onClick={() => handleDoneService(tech.id)}
                                                         disabled={sessionEnded}
                                                         className="rounded-xl bg-green-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -564,6 +741,25 @@ export default function TurnManagementPage() {
                                                         Done
                                                     </button>
                                                 </div>
+
+                                                {tech.bonusMode && (
+                                                    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-sky-50 px-4 py-3">
+                                                        <label className="text-sm font-medium text-sky-800">
+                                                            Bonus amount
+                                                        </label>
+                                                        <input
+                                                            type="text"
+                                                            inputMode="decimal"
+                                                            value={tech.bonusInput}
+                                                            onChange={(e) => handleBonusInputChange(tech.id, e.target.value)}
+                                                            placeholder="Enter amount"
+                                                            className="w-40 rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
+                                                        />
+                                                        <span className="text-sm text-sky-700">
+                                                            If total bonus reaches $30, add 1 turn after Done and reset to $0
+                                                        </span>
+                                                    </div>
+                                                )}
 
                                                 {fixMode && (
                                                     <div className="flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-3">
@@ -650,7 +846,7 @@ export default function TurnManagementPage() {
                                                             {tech.username}
                                                         </p>
                                                         <p className="mt-1 text-sm text-gray-500">
-                                                            Turn: {formatTurn(tech.turnPoints)}
+                                                            Turn: {formatTurn(tech.turnPoints)} · Bonus: ${tech.bonusAmount}
                                                         </p>
                                                     </div>
 
