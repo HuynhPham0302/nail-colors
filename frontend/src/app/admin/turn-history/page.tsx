@@ -14,14 +14,7 @@ type HistoryItem = {
     user_id: number;
     username: string;
     work_date: string;
-    final_checked_in: boolean;
     final_check_in_order: number | null;
-    final_in_progress: boolean;
-    final_started_at: number | null;
-    final_appointment_mode: boolean;
-    final_bonus_mode: boolean;
-    final_bonus_input: string;
-    final_bonus_amount: number;
     final_turn_points: number;
 };
 
@@ -53,7 +46,33 @@ export default function TurnHistoryPage() {
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [search, setSearch] = useState("");
+    const [selectedDate, setSelectedDate] = useState("");
+
+    const fetchHistory = async (dateValue?: string) => {
+        try {
+            let url = `${API_BASE}/admin/turn/history`;
+
+            if (dateValue) {
+                url += `?date=${dateValue}`;
+            }
+
+            const res = await fetch(url, {
+                credentials: "include",
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.detail || data.message || "Failed to load turn history");
+                return;
+            }
+
+            setHistory(Array.isArray(data) ? data : []);
+        } catch (error) {
+            console.error("Failed to load turn history:", error);
+            alert("Cannot connect to server");
+        }
+    };
 
     useEffect(() => {
         const checkAuthAndLoad = async () => {
@@ -75,19 +94,7 @@ export default function TurnHistoryPage() {
                 }
 
                 setCurrentUser(meData.user);
-
-                const historyRes = await fetch(`${API_BASE}/admin/turn/history`, {
-                    credentials: "include",
-                });
-
-                const historyData = await historyRes.json();
-
-                if (!historyRes.ok) {
-                    alert(historyData.detail || historyData.message || "Failed to load turn history");
-                    return;
-                }
-
-                setHistory(Array.isArray(historyData) ? historyData : []);
+                await fetchHistory();
             } catch (error) {
                 console.error("Failed to load turn history:", error);
                 alert("Cannot connect to server");
@@ -100,19 +107,9 @@ export default function TurnHistoryPage() {
     }, [router]);
 
     const groupedHistory = useMemo(() => {
-        const filtered = history.filter((item) => {
-            const keyword = search.trim().toLowerCase();
-            if (!keyword) return true;
-
-            return (
-                item.username.toLowerCase().includes(keyword) ||
-                item.work_date.includes(keyword)
-            );
-        });
-
         const map = new Map<string, HistoryItem[]>();
 
-        for (const item of filtered) {
+        for (const item of history) {
             if (!map.has(item.work_date)) {
                 map.set(item.work_date, []);
             }
@@ -122,18 +119,14 @@ export default function TurnHistoryPage() {
         return Array.from(map.entries()).map(([workDate, items]) => ({
             workDate,
             items: [...items].sort((a, b) => {
-                const aTurn = a.final_turn_points;
-                const bTurn = b.final_turn_points;
-
-                const aPriority = Math.floor(aTurn / 2);
-                const bPriority = Math.floor(bTurn / 2);
+                const aPriority = Math.floor(a.final_turn_points / 2);
+                const bPriority = Math.floor(b.final_turn_points / 2);
 
                 if (aPriority !== bPriority) return aPriority - bPriority;
-
                 return (a.final_check_in_order ?? 9999) - (b.final_check_in_order ?? 9999);
             }),
         }));
-    }, [history, search]);
+    }, [history]);
 
     if (loading) {
         return (
@@ -179,17 +172,35 @@ export default function TurnHistoryPage() {
                             <div>
                                 <h2 className="text-xl font-semibold text-gray-800">Saved Days</h2>
                                 <p className="mt-1 text-sm text-gray-500">
-                                    Each section below is one saved day from DailyTurnHistory.
+                                    Choose a date to view only that day&apos;s saved turn data.
                                 </p>
                             </div>
 
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search by staff name or date"
-                                className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition md:w-80 focus:border-pink-400 focus:ring-4 focus:ring-pink-100"
-                            />
+                            <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+                                <input
+                                    type="date"
+                                    value={selectedDate}
+                                    onChange={(e) => setSelectedDate(e.target.value)}
+                                    className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-pink-400 focus:ring-4 focus:ring-pink-100"
+                                />
+
+                                <button
+                                    onClick={() => fetchHistory(selectedDate)}
+                                    className="rounded-2xl bg-pink-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-pink-700"
+                                >
+                                    View Date
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setSelectedDate("");
+                                        fetchHistory();
+                                    }}
+                                    className="rounded-2xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+                                >
+                                    Show All
+                                </button>
+                            </div>
                         </div>
 
                         {groupedHistory.length === 0 ? (
@@ -219,32 +230,17 @@ export default function TurnHistoryPage() {
                                         </div>
 
                                         <div className="w-full overflow-x-auto">
-                                            <table className="min-w-[980px] border-collapse">
+                                            <table className="min-w-full border-collapse">
                                                 <thead className="border-b border-gray-200 bg-gray-50">
                                                     <tr>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
+                                                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                                             Username
                                                         </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
+                                                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                                             Turn
                                                         </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
+                                                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                                                             Check-In
-                                                        </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Bonus Total
-                                                        </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Appointment
-                                                        </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Bonus Mode
-                                                        </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            Checked In
-                                                        </th>
-                                                        <th className="px-4 py-4 text-left text-sm font-semibold text-gray-700">
-                                                            In Progress
                                                         </th>
                                                     </tr>
                                                 </thead>
@@ -255,64 +251,16 @@ export default function TurnHistoryPage() {
                                                             key={item.id}
                                                             className="border-b border-gray-100 transition hover:bg-pink-50/30 last:border-b-0"
                                                         >
-                                                            <td className="px-4 py-4 text-sm font-medium text-gray-800">
+                                                            <td className="px-6 py-4 text-sm font-medium text-gray-800">
                                                                 {item.username}
                                                             </td>
 
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
+                                                            <td className="px-6 py-4 text-sm text-gray-700">
                                                                 {formatTurn(item.final_turn_points)}
                                                             </td>
 
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
+                                                            <td className="px-6 py-4 text-sm text-gray-700">
                                                                 {item.final_check_in_order ?? "-"}
-                                                            </td>
-
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
-                                                                ${item.final_bonus_amount}
-                                                            </td>
-
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
-                                                                <span
-                                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.final_appointment_mode
-                                                                            ? "bg-amber-100 text-amber-700"
-                                                                            : "bg-gray-100 text-gray-600"
-                                                                        }`}
-                                                                >
-                                                                    {item.final_appointment_mode ? "Yes" : "No"}
-                                                                </span>
-                                                            </td>
-
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
-                                                                <span
-                                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.final_bonus_mode
-                                                                            ? "bg-sky-100 text-sky-700"
-                                                                            : "bg-gray-100 text-gray-600"
-                                                                        }`}
-                                                                >
-                                                                    {item.final_bonus_mode ? "Yes" : "No"}
-                                                                </span>
-                                                            </td>
-
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
-                                                                <span
-                                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.final_checked_in
-                                                                            ? "bg-green-100 text-green-700"
-                                                                            : "bg-gray-100 text-gray-600"
-                                                                        }`}
-                                                                >
-                                                                    {item.final_checked_in ? "Yes" : "No"}
-                                                                </span>
-                                                            </td>
-
-                                                            <td className="px-4 py-4 text-sm text-gray-700">
-                                                                <span
-                                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.final_in_progress
-                                                                            ? "bg-rose-100 text-rose-700"
-                                                                            : "bg-gray-100 text-gray-600"
-                                                                        }`}
-                                                                >
-                                                                    {item.final_in_progress ? "Yes" : "No"}
-                                                                </span>
                                                             </td>
                                                         </tr>
                                                     ))}
