@@ -530,3 +530,42 @@ def reset_turn_board(request: Request):
     db.close()
 
     return {"message": "Turn board reset successfully"}
+
+
+@app.get("/admin/turn/history")
+def get_turn_history(request: Request):
+    require_admin(request)
+
+    db: Session = SessionLocal()
+
+    rows = (
+        db.query(DailyTurnHistory)
+        .order_by(
+            DailyTurnHistory.work_date.desc(),
+            DailyTurnHistory.final_check_in_order.asc(),
+        )
+        .all()
+    )
+
+    result = []
+    for row in rows:
+        result.append(
+            {
+                "id": row.id,
+                "user_id": row.user_id,
+                "username": row.username_snapshot,
+                "work_date": row.work_date,
+                "final_checked_in": row.final_checked_in,
+                "final_check_in_order": row.final_check_in_order,
+                "final_in_progress": row.final_in_progress,
+                "final_started_at": row.final_started_at,
+                "final_appointment_mode": row.final_appointment_mode,
+                "final_bonus_mode": row.final_bonus_mode,
+                "final_bonus_input": row.final_bonus_input,
+                "final_bonus_amount": row.final_bonus_amount,
+                "final_turn_points": row.final_turn_points,
+            }
+        )
+
+    db.close()
+    return result

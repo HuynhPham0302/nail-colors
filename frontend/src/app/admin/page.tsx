@@ -10,6 +10,46 @@ type CurrentUser = {
   role: string;
 };
 
+type AdminCard = {
+  href: string;
+  icon: string;
+  title: string;
+  description: string;
+};
+
+const adminCards: AdminCard[] = [
+  {
+    href: "/admin/add-color",
+    icon: "+",
+    title: "Add Color",
+    description: "Add a new nail color to your database.",
+  },
+  {
+    href: "/admin/show-colors",
+    icon: "🎨",
+    title: "Show Colors",
+    description: "View all colors currently stored in the database.",
+  },
+  {
+    href: "/admin/users",
+    icon: "👤",
+    title: "Manage Users",
+    description: "Create, review, and manage user accounts.",
+  },
+  {
+    href: "/admin/turn-management",
+    icon: "🔄",
+    title: "Turn Management",
+    description: "Manage daily technician check-in, service progress, and turn tracking.",
+  },
+  {
+    href: "/admin/turn-history",
+    icon: "📊",
+    title: "Turn History",
+    description: "Review saved turn data from previous days in the database.",
+  },
+];
+
 export default function AdminPage() {
   const router = useRouter();
   const [user, setUser] = useState<CurrentUser | null>(null);
@@ -62,7 +102,7 @@ export default function AdminPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-10">
-        <div className="mx-auto max-w-5xl">
+        <div className="mx-auto max-w-6xl">
           <div className="rounded-[28px] border border-white/70 bg-white/85 p-8 shadow-xl backdrop-blur">
             <p className="text-center text-base font-medium text-gray-500">
               Loading...
@@ -77,7 +117,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-pink-50 px-4 py-8 md:py-12">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-6xl">
         <div className="overflow-hidden rounded-[30px] border border-white/60 bg-white/90 shadow-2xl backdrop-blur">
           <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-pink-600 px-6 py-8 text-white md:px-8 md:py-10">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -120,78 +160,30 @@ export default function AdminPage() {
               </p>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              <Link
-                href="/admin/add-color"
-                className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
-              >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-xl font-bold text-slate-700 transition group-hover:bg-pink-100 group-hover:text-pink-600">
-                  +
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 transition group-hover:text-pink-600">
-                  Add Color
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Add a new nail color to your database.
-                </p>
-                <p className="mt-5 text-sm font-semibold text-pink-600">
-                  Open page →
-                </p>
-              </Link>
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+              {adminCards.map((card) => (
+                <Link
+                  key={card.href}
+                  href={card.href}
+                  className="group flex h-full min-h-[250px] flex-col rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700 transition group-hover:bg-pink-100 group-hover:text-pink-600">
+                    {card.icon}
+                  </div>
 
-              <Link
-                href="/admin/show-colors"
-                className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
-              >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700 transition group-hover:bg-pink-100 group-hover:text-pink-600">
-                  🎨
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 transition group-hover:text-pink-600">
-                  Show Colors
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  View all colors currently stored in the database.
-                </p>
-                <p className="mt-5 text-sm font-semibold text-pink-600">
-                  Open page →
-                </p>
-              </Link>
+                  <h3 className="text-xl font-semibold text-gray-800 transition group-hover:text-pink-600">
+                    {card.title}
+                  </h3>
 
-              <Link
-                href="/admin/users"
-                className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
-              >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700 transition group-hover:bg-pink-100 group-hover:text-pink-600">
-                  👤
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 transition group-hover:text-pink-600">
-                  Manage Users
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Create, review, and manage user accounts.
-                </p>
-                <p className="mt-5 text-sm font-semibold text-pink-600">
-                  Open page →
-                </p>
-              </Link>
+                  <p className="mt-2 text-sm leading-6 text-gray-500">
+                    {card.description}
+                  </p>
 
-              <Link
-                href="/admin/turn-management"
-                className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-1 hover:border-pink-300 hover:bg-pink-50 hover:shadow-xl"
-              >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-lg font-bold text-slate-700 transition group-hover:bg-pink-100 group-hover:text-pink-600">
-                  🔄
-                </div>
-                <h3 className="text-xl font-semibold text-gray-800 transition group-hover:text-pink-600">
-                  Turn Management
-                </h3>
-                <p className="mt-2 text-sm text-gray-500">
-                  Manage daily technician check-in, service progress, and turn tracking.
-                </p>
-                <p className="mt-5 text-sm font-semibold text-pink-600">
-                  Open page →
-                </p>
-              </Link>
+                  <p className="mt-auto pt-6 text-sm font-semibold text-pink-600">
+                    Open page →
+                  </p>
+                </Link>
+              ))}
             </div>
           </div>
         </div>
