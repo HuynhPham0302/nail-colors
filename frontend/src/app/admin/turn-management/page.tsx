@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Technician = {
     id: number;
@@ -13,41 +13,8 @@ type Technician = {
     bonusMode: boolean;
     bonusInput: string;
     bonusAmount: number;
-    turnPoints: number; // regular = +2, appointment = +1
+    turnPoints: number;
 };
-
-const staffNames = [
-    "Theresa",
-    "Shayla",
-    "Natalie",
-    "Peter",
-    "Alyssa",
-    "Windy",
-    "Kelly Le",
-    "Julie",
-    "Nils",
-    "Kelly Pham",
-    "Helen",
-    "Nick",
-    "Thi",
-    "Emi",
-    "Katie",
-    "Tiffany",
-];
-
-const initialTechnicians: Technician[] = staffNames.map((name, index) => ({
-    id: index + 1,
-    username: name,
-    checkedIn: false,
-    checkInOrder: null,
-    inProgress: false,
-    startedAt: null,
-    appointmentMode: false,
-    bonusMode: false,
-    bonusInput: "",
-    bonusAmount: 0,
-    turnPoints: 0,
-}));
 
 function formatTurn(points: number) {
     const value = points / 2;
@@ -70,12 +37,19 @@ function parseBonusInput(value: string) {
     return num;
 }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 export default function TurnManagementPage() {
-    const [technicians, setTechnicians] = useState<Technician[]>(initialTechnicians);
+    const [technicians, setTechnicians] = useState<Technician[]>([]);
     const [sessionEnded, setSessionEnded] = useState(false);
     const [fixMode, setFixMode] = useState(false);
     const [showStaffListModal, setShowStaffListModal] = useState(false);
     const [now, setNow] = useState(Date.now());
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    const hasLoadedRef = useRef(false);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -118,6 +92,70 @@ export default function TurnManagementPage() {
     const inProgressStaff = [...technicians]
         .filter((tech) => tech.inProgress)
         .sort((a, b) => (a.startedAt ?? 0) - (b.startedAt ?? 0));
+
+    useEffect(() => {
+        const fetchTurnStaff = async () => {
+            try {
+                setLoading(true);
+
+                const res = await fetch(`${API_BASE}/admin/turn/staff`, {
+                    credentials: "include",
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    console.error("Failed to load turn staff:", data);
+                    alert(data.detail || data.message || "Failed to load staff data");
+                    return;
+                }
+
+                setTechnicians(data);
+                hasLoadedRef.current = true;
+            } catch (error) {
+                console.error("Failed to load turn staff:", error);
+                alert("Failed to load staff data");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTurnStaff();
+    }, []);
+
+    useEffect(() => {
+        if (!hasLoadedRef.current) return;
+        if (technicians.length === 0) return;
+
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        saveTimeoutRef.current = setTimeout(async () => {
+            try {
+                setSaving(true);
+
+                await fetch(`${API_BASE}/admin/turn/save-state`, {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ technicians }),
+                });
+            } catch (error) {
+                console.error("Failed to save turn state:", error);
+            } finally {
+                setSaving(false);
+            }
+        }, 400);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [technicians]);
 
     const handleAddSingleToCheckedIn = (id: number) => {
         if (sessionEnded) return;
@@ -190,7 +228,6 @@ export default function TurnManagementPage() {
 
     const handleBonusInputChange = (id: number, value: string) => {
         if (sessionEnded) return;
-
         if (!/^\d*\.?\d*$/.test(value)) return;
 
         setTechnicians((prev) =>
@@ -220,8 +257,8 @@ export default function TurnManagementPage() {
                     const totalBonus = nextBonusAmount + serviceBonus;
 
                     if (totalBonus >= 30) {
-                        nextTurnPoints += 2; // +1 turn
-                        nextBonusAmount = 0; // reset về 0, không giữ số dư
+                        nextTurnPoints += 2;
+                        nextBonusAmount = 0;
                     } else {
                         nextBonusAmount = totalBonus;
                     }
@@ -328,41 +365,77 @@ export default function TurnManagementPage() {
         );
     };
 
-    const handleDoneForToday = () => {
+    const handleDoneForToday = async () => {
         const confirmed = window.confirm(
             "Are you sure you want to finish today and save all turn data?"
         );
         if (!confirmed) return;
 
-        setSessionEnded(true);
-        setShowStaffListModal(false);
+        try {
+            const res = await fetch(`${API_BASE}/admin/turn/done-for-today`, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ technicians }),
+            });
 
-        console.log("Final turn data for today:", technicians);
-        alert("Today is finished. Later this button will save all data to the database.");
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.detail || data.message || "Failed to save today's data");
+                return;
+            }
+
+            setSessionEnded(true);
+            setShowStaffListModal(false);
+            alert("Today is finished and saved to database.");
+        } catch (error) {
+            console.error(error);
+            alert("Failed to save today's data.");
+        }
     };
 
-    const handleResetBoard = () => {
+    const handleResetBoard = async () => {
         const confirmed = window.confirm("Reset the board for a new day?");
         if (!confirmed) return;
 
-        setTechnicians((prev) =>
-            prev.map((tech) => ({
-                ...tech,
-                checkedIn: false,
-                checkInOrder: null,
-                inProgress: false,
-                startedAt: null,
-                appointmentMode: false,
-                bonusMode: false,
-                bonusInput: "",
-                bonusAmount: 0,
-                turnPoints: 0,
-            }))
-        );
+        try {
+            const res = await fetch(`${API_BASE}/admin/turn/reset`, {
+                method: "POST",
+                credentials: "include",
+            });
 
-        setSessionEnded(false);
-        setFixMode(false);
-        setShowStaffListModal(false);
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.detail || data.message || "Failed to reset board");
+                return;
+            }
+
+            setTechnicians((prev) =>
+                prev.map((tech) => ({
+                    ...tech,
+                    checkedIn: false,
+                    checkInOrder: null,
+                    inProgress: false,
+                    startedAt: null,
+                    appointmentMode: false,
+                    bonusMode: false,
+                    bonusInput: "",
+                    bonusAmount: 0,
+                    turnPoints: 0,
+                }))
+            );
+
+            setSessionEnded(false);
+            setFixMode(false);
+            setShowStaffListModal(false);
+        } catch (error) {
+            console.error(error);
+            alert("Failed to reset board.");
+        }
     };
 
     return (
@@ -385,7 +458,7 @@ export default function TurnManagementPage() {
                             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                                 <button
                                     onClick={() => setShowStaffListModal(true)}
-                                    disabled={sessionEnded}
+                                    disabled={sessionEnded || loading}
                                     className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Staff List
@@ -393,10 +466,10 @@ export default function TurnManagementPage() {
 
                                 <button
                                     onClick={() => setFixMode((prev) => !prev)}
-                                    disabled={sessionEnded}
+                                    disabled={sessionEnded || loading}
                                     className={`rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${fixMode
-                                        ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
-                                        : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                            ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                                            : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
                                         }`}
                                 >
                                     Fix Mode: {fixMode ? "On" : "Off"}
@@ -404,14 +477,16 @@ export default function TurnManagementPage() {
 
                                 <button
                                     onClick={handleResetBoard}
-                                    className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
+                                    disabled={loading}
+                                    className="rounded-2xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Reset Board
                                 </button>
 
                                 <button
                                     onClick={handleDoneForToday}
-                                    className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-md transition hover:bg-slate-100"
+                                    disabled={loading}
+                                    className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-md transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     Done for Today
                                 </button>
@@ -435,6 +510,18 @@ export default function TurnManagementPage() {
                                     Fix Mode Active
                                 </div>
                             )}
+
+                            {loading && (
+                                <div className="rounded-full bg-slate-200 px-4 py-2 text-sm font-semibold text-slate-800">
+                                    Loading...
+                                </div>
+                            )}
+
+                            {saving && !loading && (
+                                <div className="rounded-full bg-sky-200 px-4 py-2 text-sm font-semibold text-sky-900">
+                                    Saving...
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -453,7 +540,11 @@ export default function TurnManagementPage() {
                             </div>
 
                             <div className="space-y-3">
-                                {checkedInStaff.length === 0 ? (
+                                {loading ? (
+                                    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                                        Loading staff...
+                                    </div>
+                                ) : checkedInStaff.length === 0 ? (
                                     <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
                                         No technician checked in yet.
                                     </div>
@@ -522,8 +613,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
@@ -602,7 +693,11 @@ export default function TurnManagementPage() {
                             </div>
 
                             <div className="space-y-3">
-                                {inProgressStaff.length === 0 ? (
+                                {loading ? (
+                                    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
+                                        Loading staff...
+                                    </div>
+                                ) : inProgressStaff.length === 0 ? (
                                     <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500">
                                         No technician is in progress right now.
                                     </div>
@@ -678,8 +773,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
@@ -689,8 +784,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleBonus(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.bonusMode
-                                                            ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
-                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                                ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
+                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Bonus
@@ -794,7 +889,11 @@ export default function TurnManagementPage() {
                         </div>
 
                         <div className="max-h-[60vh] overflow-y-auto px-5 py-5 sm:px-6">
-                            {availableStaff.length === 0 ? (
+                            {loading ? (
+                                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
+                                    Loading staff...
+                                </div>
+                            ) : availableStaff.length === 0 ? (
                                 <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center text-sm text-gray-500">
                                     No available staff left to add.
                                 </div>
