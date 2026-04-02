@@ -9,8 +9,8 @@ from auth import (
     decode_access_token,
 )
 from database import engine, Base, SessionLocal
-from models import NailColor, User
-import models
+from models import NailColor, User, DailyTurnState, DailyTurnHistory
+from datetime import datetime
 import os
 
 app = FastAPI()
@@ -58,6 +58,28 @@ class AddUserRequest(BaseModel):
     username: str
     password: str
     role: str
+
+
+class TurnTechnicianPayload(BaseModel):
+    id: int
+    username: str
+    checkedIn: bool
+    checkInOrder: int | None = None
+    inProgress: bool
+    startedAt: int | None = None
+    appointmentMode: bool
+    bonusMode: bool
+    bonusInput: str = ""
+    bonusAmount: int
+    turnPoints: int
+
+
+class TurnBoardUpdateRequest(BaseModel):
+    technicians: list[TurnTechnicianPayload]
+
+
+def get_today_key():
+    return datetime.utcnow().strftime("%Y%m%d")
 
 
 def hex_to_rgb(hex_color: str):
@@ -338,3 +360,162 @@ def delete_user(user_id: int, request: Request):
     db.close()
 
     return {"message": "User deleted successfully"}
+
+
+@app.get("/admin/turn/staff")
+def get_turn_staff(request: Request):
+    require_admin(request)
+
+    db: Session = SessionLocal()
+    today = get_today_key()
+
+    staff_users = (
+        db.query(User)
+        .filter(User.role == "staff")
+        .filter(User.is_active == True)
+        .order_by(User.username.asc())
+        .all()
+    )
+
+    result = []
+
+    for user in staff_users:
+        state = (
+            db.query(DailyTurnState)
+            .filter(DailyTurnState.user_id == user.id)
+            .filter(DailyTurnState.work_date == today)
+            .first()
+        )
+
+        if not state:
+            state = DailyTurnState(
+                user_id=user.id,
+                work_date=today,
+                checked_in=False,
+                check_in_order=None,
+                in_progress=False,
+                started_at=None,
+                appointment_mode=False,
+                bonus_mode=False,
+                bonus_input="",
+                bonus_amount=0,
+                turn_points=0,
+            )
+            db.add(state)
+            db.commit()
+            db.refresh(state)
+
+        result.append(
+            {
+                "id": user.id,
+                "username": user.username,
+                "checkedIn": state.checked_in,
+                "checkInOrder": state.check_in_order,
+                "inProgress": state.in_progress,
+                "startedAt": state.started_at,
+                "appointmentMode": state.appointment_mode,
+                "bonusMode": state.bonus_mode,
+                "bonusInput": state.bonus_input or "",
+                "bonusAmount": state.bonus_amount,
+                "turnPoints": state.turn_points,
+            }
+        )
+
+    db.close()
+    return result
+
+
+@app.post("/admin/turn/save-state")
+def save_turn_state(payload: TurnBoardUpdateRequest, request: Request):
+    require_admin(request)
+
+    db: Session = SessionLocal()
+    today = get_today_key()
+
+    for tech in payload.technicians:
+        state = (
+            db.query(DailyTurnState)
+            .filter(DailyTurnState.user_id == tech.id)
+            .filter(DailyTurnState.work_date == today)
+            .first()
+        )
+
+        if not state:
+            state = DailyTurnState(
+                user_id=tech.id,
+                work_date=today,
+            )
+            db.add(state)
+
+        state.checked_in = tech.checkedIn
+        state.check_in_order = tech.checkInOrder
+        state.in_progress = tech.inProgress
+        state.started_at = tech.startedAt
+        state.appointment_mode = tech.appointmentMode
+        state.bonus_mode = tech.bonusMode
+        state.bonus_input = tech.bonusInput
+        state.bonus_amount = tech.bonusAmount
+        state.turn_points = tech.turnPoints
+
+    db.commit()
+    db.close()
+
+    return {"message": "Turn state saved successfully"}
+
+
+@app.post("/admin/turn/done-for-today")
+def done_for_today(payload: TurnBoardUpdateRequest, request: Request):
+    require_admin(request)
+
+    db: Session = SessionLocal()
+    today = get_today_key()
+
+    db.query(DailyTurnHistory).filter(DailyTurnHistory.work_date == today).delete()
+
+    for tech in payload.technicians:
+        history_row = DailyTurnHistory(
+            user_id=tech.id,
+            username_snapshot=tech.username,
+            work_date=today,
+            final_checked_in=tech.checkedIn,
+            final_check_in_order=tech.checkInOrder,
+            final_in_progress=tech.inProgress,
+            final_started_at=tech.startedAt,
+            final_appointment_mode=tech.appointmentMode,
+            final_bonus_mode=tech.bonusMode,
+            final_bonus_input=tech.bonusInput,
+            final_bonus_amount=tech.bonusAmount,
+            final_turn_points=tech.turnPoints,
+        )
+        db.add(history_row)
+
+    db.commit()
+    db.close()
+
+    return {"message": "Daily turn history saved successfully"}
+
+
+@app.post("/admin/turn/reset")
+def reset_turn_board(request: Request):
+    require_admin(request)
+
+    db: Session = SessionLocal()
+    today = get_today_key()
+
+    states = db.query(DailyTurnState).filter(DailyTurnState.work_date == today).all()
+
+    for state in states:
+        state.checked_in = False
+        state.check_in_order = None
+        state.in_progress = False
+        state.started_at = None
+        state.appointment_mode = False
+        state.bonus_mode = False
+        state.bonus_input = ""
+        state.bonus_amount = 0
+        state.turn_points = 0
+
+    db.commit()
+    db.close()
+
+    return {"message": "Turn board reset successfully"}
