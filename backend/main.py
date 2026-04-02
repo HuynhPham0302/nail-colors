@@ -349,17 +349,28 @@ def delete_user(user_id: int, request: Request):
 
     db: Session = SessionLocal()
 
-    user = db.query(User).filter(User.id == user_id).first()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
 
-    if not user:
+        if not user:
+            db.close()
+            return {"message": "User not found"}
+
+        db.query(DailyTurnState).filter(DailyTurnState.user_id == user_id).delete()
+        db.query(DailyTurnHistory).filter(DailyTurnHistory.user_id == user_id).delete()
+
+        db.delete(user)
+        db.commit()
+
+        return {"message": "User deleted successfully"}
+
+    except Exception as e:
+        db.rollback()
+        print("DELETE USER ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete user")
+
+    finally:
         db.close()
-        return {"message": "User not found"}
-
-    db.delete(user)
-    db.commit()
-    db.close()
-
-    return {"message": "User deleted successfully"}
 
 
 @app.get("/admin/turn/staff")
