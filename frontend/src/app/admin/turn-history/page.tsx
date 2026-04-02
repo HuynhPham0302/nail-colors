@@ -47,6 +47,7 @@ export default function TurnHistoryPage() {
     const [history, setHistory] = useState<HistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState("");
+    const [deleteLoadingDate, setDeleteLoadingDate] = useState<string | null>(null);
 
     const fetchHistory = async (dateValue?: string) => {
         try {
@@ -71,6 +72,42 @@ export default function TurnHistoryPage() {
         } catch (error) {
             console.error("Failed to load turn history:", error);
             alert("Cannot connect to server");
+        }
+    };
+
+    const handleDeleteDay = async (workDate: string) => {
+        const confirmed = window.confirm(
+            `Delete all saved data for ${formatWorkDate(workDate)}? This cannot be undone.`
+        );
+        if (!confirmed) return;
+
+        try {
+            setDeleteLoadingDate(workDate);
+
+            const res = await fetch(`${API_BASE}/admin/turn/history/${workDate}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.detail || data.message || "Failed to delete day");
+                return;
+            }
+
+            setHistory((prev) => prev.filter((item) => item.work_date !== workDate));
+
+            if (selectedDate && workDate === selectedDate.replace(/-/g, "")) {
+                setSelectedDate("");
+            }
+
+            alert(data.message || "Deleted successfully");
+        } catch (error) {
+            console.error("Failed to delete day:", error);
+            alert("Cannot connect to server");
+        } finally {
+            setDeleteLoadingDate(null);
         }
     };
 
@@ -158,17 +195,26 @@ export default function TurnHistoryPage() {
                                 </p>
                             </div>
 
-                            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm text-white">
-                                <span className="h-2.5 w-2.5 rounded-full bg-green-300"></span>
-                                <span>
-                                    Welcome, <span className="font-semibold">{currentUser.username}</span>
-                                </span>
+                            <div className="flex flex-col items-start gap-3 md:items-end">
+                                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-sm text-white">
+                                    <span className="h-2.5 w-2.5 rounded-full bg-green-300"></span>
+                                    <span>
+                                        Welcome, <span className="font-semibold">{currentUser.username}</span>
+                                    </span>
+                                </div>
+
+                                <button
+                                    onClick={() => router.push("/admin")}
+                                    className="rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-800 shadow-md transition hover:bg-slate-100"
+                                >
+                                    Back to Admin
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div className="p-4 md:p-8">
-                        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                        <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                             <div>
                                 <h2 className="text-xl font-semibold text-gray-800">Saved Days</h2>
                                 <p className="mt-1 text-sm text-gray-500">
@@ -176,7 +222,7 @@ export default function TurnHistoryPage() {
                                 </p>
                             </div>
 
-                            <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+                            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
                                 <input
                                     type="date"
                                     value={selectedDate}
@@ -224,8 +270,18 @@ export default function TurnHistoryPage() {
                                                 </p>
                                             </div>
 
-                                            <div className="inline-flex w-fit items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-pink-600 shadow-sm">
-                                                {group.items.length} staff
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <div className="inline-flex w-fit items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-pink-600 shadow-sm">
+                                                    {group.items.length} staff
+                                                </div>
+
+                                                <button
+                                                    onClick={() => handleDeleteDay(group.workDate)}
+                                                    disabled={deleteLoadingDate === group.workDate}
+                                                    className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {deleteLoadingDate === group.workDate ? "Deleting..." : "Delete Day"}
+                                                </button>
                                             </div>
                                         </div>
 

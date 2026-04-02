@@ -589,3 +589,36 @@ def get_turn_history(request: Request, date: Optional[str] = None):
 
     finally:
         db.close()
+
+
+@app.delete("/admin/turn/history/{work_date}")
+def delete_turn_history_by_date(work_date: str, request: Request):
+    require_admin(request)
+
+    db: Session = SessionLocal()
+
+    try:
+        # validate format YYYYMMDD
+        if len(work_date) != 8 or not work_date.isdigit():
+            raise HTTPException(status_code=400, detail="Invalid date format")
+
+        deleted_count = (
+            db.query(DailyTurnHistory)
+            .filter(DailyTurnHistory.work_date == work_date)
+            .delete()
+        )
+
+        db.commit()
+
+        return {
+            "message": f"Deleted {deleted_count} records",
+            "work_date": work_date,
+        }
+
+    except Exception as e:
+        db.rollback()
+        print("DELETE DAY ERROR:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to delete day")
+
+    finally:
+        db.close()
