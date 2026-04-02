@@ -377,7 +377,8 @@ export default function TurnManagementPage() {
                                 </p>
                                 <h1 className="text-3xl font-bold md:text-4xl">Turn Management</h1>
                                 <p className="mt-3 max-w-3xl text-sm text-slate-200 md:text-base">
-                                    Manage daily technician check-in, service progress, bonus tracking, and turn counting.
+                                    Manage daily technician check-in, service progress, bonus tracking, and turn
+                                    counting.
                                 </p>
                             </div>
 
@@ -394,8 +395,8 @@ export default function TurnManagementPage() {
                                     onClick={() => setFixMode((prev) => !prev)}
                                     disabled={sessionEnded}
                                     className={`rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${fixMode
-                                            ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
-                                            : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                        ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                                        : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
                                         }`}
                                 >
                                     Fix Mode: {fixMode ? "On" : "Off"}
@@ -423,9 +424,7 @@ export default function TurnManagementPage() {
                             </div>
 
                             <div
-                                className={`rounded-full px-4 py-2 text-sm font-semibold ${sessionEnded
-                                        ? "bg-amber-200 text-amber-900"
-                                        : "bg-green-200 text-green-900"
+                                className={`rounded-full px-4 py-2 text-sm font-semibold ${sessionEnded ? "bg-amber-200 text-amber-900" : "bg-green-200 text-green-900"
                                     }`}
                             >
                                 {sessionEnded ? "Session Ended" : "Session Active"}
@@ -477,12 +476,6 @@ export default function TurnManagementPage() {
                                                                     Appointment
                                                                 </span>
                                                             )}
-
-                                                            {tech.bonusMode && (
-                                                                <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
-                                                                    Bonus
-                                                                </span>
-                                                            )}
                                                         </div>
                                                     </div>
 
@@ -529,43 +522,13 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
                                                     </button>
-
-                                                    <button
-                                                        onClick={() => handleToggleBonus(tech.id)}
-                                                        disabled={sessionEnded}
-                                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.bonusMode
-                                                                ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                                                            }`}
-                                                    >
-                                                        Bonus
-                                                    </button>
                                                 </div>
-
-                                                {tech.bonusMode && (
-                                                    <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-sky-50 px-4 py-3">
-                                                        <label className="text-sm font-medium text-sky-800">
-                                                            Bonus amount
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            inputMode="decimal"
-                                                            value={tech.bonusInput}
-                                                            onChange={(e) => handleBonusInputChange(tech.id, e.target.value)}
-                                                            placeholder="Enter amount"
-                                                            className="w-40 rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
-                                                        />
-                                                        <span className="text-sm text-sky-700">
-                                                            Added only after Done
-                                                        </span>
-                                                    </div>
-                                                )}
 
                                                 {fixMode && (
                                                     <div className="flex flex-wrap gap-2 border-t border-dashed border-gray-200 pt-3">
@@ -715,8 +678,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
@@ -726,8 +689,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleBonus(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.bonusMode
-                                                                ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Bonus
@@ -751,12 +714,15 @@ export default function TurnManagementPage() {
                                                             type="text"
                                                             inputMode="decimal"
                                                             value={tech.bonusInput}
-                                                            onChange={(e) => handleBonusInputChange(tech.id, e.target.value)}
+                                                            onChange={(e) =>
+                                                                handleBonusInputChange(tech.id, e.target.value)
+                                                            }
                                                             placeholder="Enter amount"
                                                             className="w-40 rounded-xl border border-sky-200 bg-white px-3 py-2 text-sm font-medium text-gray-800 outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100"
                                                         />
                                                         <span className="text-sm text-sky-700">
-                                                            If total bonus reaches $30, add 1 turn after Done and reset to $0
+                                                            If total bonus reaches $30, add 1 turn after Done and reset
+                                                            to $0
                                                         </span>
                                                     </div>
                                                 )}
@@ -846,7 +812,8 @@ export default function TurnManagementPage() {
                                                             {tech.username}
                                                         </p>
                                                         <p className="mt-1 text-sm text-gray-500">
-                                                            Turn: {formatTurn(tech.turnPoints)} · Bonus: ${tech.bonusAmount}
+                                                            Turn: {formatTurn(tech.turnPoints)} · Bonus: $
+                                                            {tech.bonusAmount}
                                                         </p>
                                                     </div>
 
