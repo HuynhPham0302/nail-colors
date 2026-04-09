@@ -468,8 +468,8 @@ export default function TurnManagementPage() {
                                     onClick={() => setFixMode((prev) => !prev)}
                                     disabled={sessionEnded || loading}
                                     className={`rounded-2xl px-5 py-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${fixMode
-                                            ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
-                                            : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
+                                        ? "bg-amber-200 text-amber-900 hover:bg-amber-300"
+                                        : "border border-white/20 bg-white/10 text-white hover:bg-white/20"
                                         }`}
                                 >
                                     Fix Mode: {fixMode ? "On" : "Off"}
@@ -607,17 +607,6 @@ export default function TurnManagementPage() {
                                                         className="rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50"
                                                     >
                                                         Start Service
-                                                    </button>
-
-                                                    <button
-                                                        onClick={() => handleToggleAppointment(tech.id)}
-                                                        disabled={sessionEnded}
-                                                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
-                                                            }`}
-                                                    >
-                                                        Has Appointment
                                                     </button>
                                                 </div>
 
@@ -773,8 +762,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleAppointment(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.appointmentMode
-                                                                ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Has Appointment
@@ -784,8 +773,8 @@ export default function TurnManagementPage() {
                                                         onClick={() => handleToggleBonus(tech.id)}
                                                         disabled={sessionEnded}
                                                         className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tech.bonusMode
-                                                                ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
-                                                                : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+                                                            ? "bg-sky-100 text-sky-800 hover:bg-sky-200"
+                                                            : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                                                             }`}
                                                     >
                                                         Bonus
